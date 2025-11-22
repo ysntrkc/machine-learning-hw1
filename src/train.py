@@ -16,6 +16,8 @@ from utils import (
     save_weights,
     parse_training_args,
     print_training_config,
+    log,
+    setup_logger,
 )
 
 
@@ -33,7 +35,7 @@ def load_training_data(
         train_data (tuple[np.ndarray, np.ndarray]): Eğitim verisi (X_train, y_train).
         val_data (tuple[np.ndarray, np.ndarray]): Doğrulama verisi (X_val, y_val).
     """
-    print(f"Loading data splits with prefix: {path_prefix}")
+    log(f"Loading data splits with prefix: {path_prefix}")
     if not os.path.exists(f"{path_prefix}_train.npz") or not os.path.exists(
         f"{path_prefix}_val.npz"
     ):
@@ -50,7 +52,7 @@ def load_training_data(
     X_val = val_loaded["X"]
     y_val = val_loaded["y"]
 
-    print(f"Data splits loaded with prefix: {path_prefix}")
+    log(f"Data splits loaded with prefix: {path_prefix}")
 
     return (X_train, y_train), (X_val, y_val)
 
@@ -96,7 +98,7 @@ def train_logistic_regression(
     train_losses: list[float] = []
     val_losses: list[float] = []
 
-    print(f"\n{15*'='} Starting Training {'='*16}")
+    log(f"\n{15*'='} Starting Training {'='*16}")
     for epoch in range(n_epochs):
         epoch_train_losses: list[float] = []
 
@@ -120,7 +122,7 @@ def train_logistic_regression(
         val_losses.append(val_loss)
 
         if (epoch + 1) % 10 == 0 or epoch == 0:
-            print(
+            log(
                 f"Epoch {epoch+1:>{len(str(n_epochs))}d}/{n_epochs} - Train Loss: {avg_train_loss:.4f} - Val Loss: {val_loss:.4f}"
             )
 
@@ -150,11 +152,15 @@ def train(learning_rate: float = 0.01, n_epochs: int = 100) -> None:
     plot_loss_curve(train_losses, val_losses)
     save_weights(w)
 
-    print("\n" + "=" * 50)
-    print("Training completed and model saved.")
-    print("=" * 50)
+    log("\n" + "=" * 50)
+    log("Training completed and model saved.")
+    log("=" * 50)
 
 
 if __name__ == "__main__":
     args = parse_training_args()
+
+    # Setup logger with mode from command line arguments
+    setup_logger(mode=args.log)
+
     train(learning_rate=args.learning_rate, n_epochs=args.epochs)

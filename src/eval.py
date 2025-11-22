@@ -1,9 +1,11 @@
 from typing import Tuple
 import numpy as np
+import argparse
 
 from model import predict_probabilities, cross_entropy_loss
 from metrics import accuracy, precision, recall, f1_score, confusion_matrix
-from utils import log_test_results, print_confusion_matrix
+from utils import log_test_results, print_confusion_matrix, log, setup_logger
+import argparse
 
 
 def load_test_data(
@@ -72,6 +74,20 @@ def evaluate_model(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Model Değerlendirme")
+    parser.add_argument(
+        "-l",
+        "--log",
+        type=str,
+        default="both",
+        choices=["both", "console", "file"],
+        help="Log modu: 'both', 'console', veya 'file'",
+    )
+    args = parser.parse_args()
+
+    # Setup logger with mode from command line arguments
+    setup_logger(mode=args.log)
+
     X_test, y_test = load_test_data("data/normalized")
     X_test = add_bias_term(X_test)
 
@@ -79,12 +95,12 @@ if __name__ == "__main__":
 
     metrics = evaluate_model(X_test, y_test, weights)
 
-    print("Test Seti Değerlendirme Sonuçları:")
-    print(f"Kayıp (Loss): {metrics['loss']:.4f}")
-    print(f"Doğruluk (Accuracy): {metrics['accuracy']:.4f}")
-    print(f"Kesinlik (Precision): {metrics['precision']:.4f}")
-    print(f"Duyarlılık (Recall): {metrics['recall']:.4f}")
-    print(f"F1 Skoru: {metrics['f1_score']:.4f}")
+    log("Test Seti Değerlendirme Sonuçları:")
+    log(f"Kayıp (Loss): {metrics['loss']:.4f}")
+    log(f"Doğruluk (Accuracy): {metrics['accuracy']:.4f}")
+    log(f"Kesinlik (Precision): {metrics['precision']:.4f}")
+    log(f"Duyarlılık (Recall): {metrics['recall']:.4f}")
+    log(f"F1 Skoru: {metrics['f1_score']:.4f}")
 
     print_confusion_matrix(metrics["confusion_matrix"])
 

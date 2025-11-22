@@ -4,6 +4,7 @@ import numpy as np
 import os
 
 from datetime import datetime
+from logger import log, setup_logger, get_logger
 
 
 def ensure_dir_exists(directory: str) -> None:
@@ -135,7 +136,7 @@ def parse_training_args():
     """
     Komut satırı argümanlarını parse eder.
     Returns:
-        argparse.Namespace: Parse edilmiş argümanlar (learning_rate, epochs).
+        argparse.Namespace: Parse edilmiş argümanlar (learning_rate, epochs, log_mode).
     """
     import argparse
 
@@ -156,6 +157,15 @@ def parse_training_args():
         "-e", "--epochs", type=int, default=100, help="Eğitim için epoch sayısı"
     )
 
+    parser.add_argument(
+        "-l",
+        "--log",
+        type=str,
+        default="both",
+        choices=["both", "console", "file"],
+        help="Log modu: 'both' (konsol ve dosya), 'console' (sadece konsol), 'file' (sadece dosya)",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -167,13 +177,13 @@ def print_training_config(learning_rate: float, n_epochs: int) -> None:
         learning_rate (float): Öğrenme oranı.
         n_epochs (int): Epoch sayısı.
     """
-    print("=" * 50)
-    print("EĞITIM KONFIGÜRASYONU")
-    print("=" * 50)
-    print(f"Learning Rate: {learning_rate}")
-    print(f"Epoch Sayısı: {n_epochs}")
-    print("=" * 50)
-    print()
+    log("=" * 50)
+    log("EĞITIM KONFIGÜRASYONU")
+    log("=" * 50)
+    log(f"Learning Rate: {learning_rate}")
+    log(f"Epoch Sayısı: {n_epochs}")
+    log("=" * 50)
+    log("")
 
 
 def print_confusion_matrix(conf_matrix: Tuple[int, int, int, int]) -> None:
@@ -194,43 +204,41 @@ def print_confusion_matrix(conf_matrix: Tuple[int, int, int, int]) -> None:
     # Tablo genişliğini belirle
     col_width = 20
 
-    print("\n" + "=" * 70)
-    print("CONFUSION MATRIX".center(70))
-    print("=" * 70)
-    print()
+    log("\n" + "=" * 70)
+    log("CONFUSION MATRIX".center(70))
+    log("=" * 70)
+    log("")
 
     # Başlık satırı
-    print(
+    log(
         f"{'':>{col_width}} | {'Actual Positive':^{col_width}} | {'Actual Negative':^{col_width}}"
     )
-    print(
-        f"{'':>{col_width}} | {'(Class 1)':^{col_width}} | {'(Class 0)':^{col_width}}"
-    )
-    print("-" * 70)
+    log(f"{'':>{col_width}} | {'(Class 1)':^{col_width}} | {'(Class 0)':^{col_width}}")
+    log("-" * 70)
 
-    print(
+    log(
         f"{'Predicted Positive':>{col_width}} | {str(tp):^{col_width}} | {str(fp):^{col_width}}"
     )
-    print(
+    log(
         f"{'(Class 1)':>{col_width}} | {'(True Positive)':^{col_width}} | {'(False Positive)':^{col_width}}"
     )
-    print("-" * 70)
+    log("-" * 70)
 
-    print(
+    log(
         f"{'Predicted Negative':>{col_width}} | {str(fn):^{col_width}} | {str(tn):^{col_width}}"
     )
-    print(
+    log(
         f"{'(Class 0)':>{col_width}} | {'(False Negative)':^{col_width}} | {'(True Negative)':^{col_width}}"
     )
-    print("-" * 70)
+    log("-" * 70)
 
-    print()
-    print("ÖZET BİLGİLER:".center(70))
-    print("-" * 70)
-    print(f"  Toplam Örnek                : {total}")
-    print(f"  Gerçek Pozitif (Actual 1)   : {actual_positive}")
-    print(f"  Gerçek Negatif (Actual 0)   : {actual_negative}")
-    print(f"  Tahmin Pozitif (Predicted 1): {predicted_positive}")
-    print(f"  Tahmin Negatif (Predicted 0): {predicted_negative}")
-    print("=" * 70)
-    print()
+    log("")
+    log("ÖZET BİLGİLER:".center(70))
+    log("-" * 70)
+    log(f"  Toplam Örnek                : {total}")
+    log(f"  Gerçek Pozitif (Actual 1)   : {actual_positive}")
+    log(f"  Gerçek Negatif (Actual 0)   : {actual_negative}")
+    log(f"  Tahmin Pozitif (Predicted 1): {predicted_positive}")
+    log(f"  Tahmin Negatif (Predicted 0): {predicted_negative}")
+    log("=" * 70)
+    log("")
