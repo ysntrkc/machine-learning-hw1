@@ -1,0 +1,498 @@
+# Makine Öğrenmesi Ödev 1: Lojistik Regresyon
+
+Bu proje, **NumPy** kullanarak sıfırdan lojistik regresyon algoritmasını uygulayan eksiksiz bir makine öğrenmesi pipeline'ıdır. Proje, veri ön işleme, model eğitimi, değerlendirme ve görselleştirme adımlarını içerir.
+
+## 📋 İçindekiler
+
+- [Proje Yapısı](#proje-yapısı)
+- [Kurulum](#kurulum)
+- [Kullanım](#kullanım)
+- [Modüllerin Detaylı Açıklaması](#modüllerin-detaylı-açıklaması)
+- [Algoritma Detayları](#algoritma-detayları)
+- [Sonuçlar](#sonuçlar)
+- [Gereksinimler](#gereksinimler)
+
+## 🗂️ Proje Yapısı
+
+```
+makine-ogrenmesi-hw1/
+│
+├── data/                           # Veri setleri
+│   ├── hw1Data.txt                # Ham veri (101 örnek, 2 özellik, 1 etiket)
+│   ├── raw_train.npz              # Ham eğitim verisi (%60)
+│   ├── raw_val.npz                # Ham doğrulama verisi (%20)
+│   ├── raw_test.npz               # Ham test verisi (%20)
+│   ├── normalized_train.npz       # Normalize edilmiş eğitim verisi
+│   ├── normalized_val.npz         # Normalize edilmiş doğrulama verisi
+│   └── normalized_test.npz        # Normalize edilmiş test verisi
+│
+├── results/                        # Sonuçlar ve çıktılar
+│   ├── graphs/                     # Grafikler
+│   │   ├── loss_curve.png         # Eğitim/doğrulama kayıp grafiği
+│   │   ├── tüm_scatter_plot.png   # Tüm verinin scatter plot grafiği
+│   │   └── train_scatter_plot.png # Eğitim verisinin scatter plot grafiği
+│   └── model/                      # Eğitilmiş model ağırlıkları
+│       ├── model_weights_*.npy    # Zaman damgalı model dosyaları
+│       └── model_weights_latest.npy # En son eğitilmiş model
+│
+├── src/                            # Kaynak kod
+│   ├── dataset.py                 # Veri yükleme ve ön işleme
+│   ├── model.py                   # Lojistik regresyon modeli
+│   ├── train.py                   # Model eğitimi
+│   ├── eval.py                    # Model değerlendirme
+│   ├── metrics.py                 # Değerlendirme metrikleri
+│   └── utils.py                   # Yardımcı fonksiyonlar
+│
+└── README.md                       # Bu dosya
+```
+
+## 🚀 Kurulum
+
+### Gereksinimler
+
+- Python 3.7+
+- NumPy
+- Matplotlib
+
+### Adımlar
+
+1. Repoyu klonlayın veya indirin:
+```bash
+git clone <repository-url>
+cd makine-ogrenmesi-hw1
+```
+
+2. (Opsiyonel) Sanal ortam oluşturun:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/MacOS
+venv\Scripts\activate     # Windows
+```
+
+3. Gerekli kütüphaneleri yükleyin:
+```bash
+pip install -r requirements.txt
+
+```
+
+## 💻 Kullanım
+
+### 1. Model Eğitimi
+
+Modeli eğitmek için:
+
+```bash
+cd src
+python train.py
+```
+
+Bu komut:
+- Veriyi yükler ve normalize eder
+- Train/val/test setlerine ayırır (%60/%20/%20)
+- Scatter plot grafikleri oluşturur (tüm veri ve eğitim verisi)
+- 100 epoch boyunca SGD ile modeli eğitir
+- Kayıp grafiğini oluşturur (`results/graphs/loss_curve.png`)
+- Model ağırlıklarını iki versiyonda kaydeder:
+  - Timestamp'li versiyon: `model_weights_YYYYMMDD_HHMMSS.npy`
+  - Son model: `model_weights_latest.npy`
+
+### 2. Model Değerlendirme
+
+Eğitilmiş modeli test setinde değerlendirmek için:
+
+```bash
+python eval.py
+```
+
+Bu komut şu metrikleri yazdırır:
+- **Loss (Kayıp)**: Cross-entropy loss
+- **Accuracy (Doğruluk)**: Genel doğru tahmin oranı
+- **Precision (Kesinlik)**: Pozitif tahminlerin doğruluk oranı
+- **Recall (Duyarlılık)**: Gerçek pozitifleri bulma oranı
+- **F1 Score**: Precision ve recall'ın harmonik ortalaması
+
+### 3. Veri Hazırlama (Opsiyonel)
+
+Sadece veri ön işleme yapmak için:
+
+```bash
+python dataset.py
+```
+
+## 📚 Modüllerin Detaylı Açıklaması
+
+### 1. `dataset.py` - Veri İşleme Modülü
+
+Bu modül, veri yükleme, normalizasyon ve bölme işlemlerini gerçekleştirir.
+
+**Import:** `from utils import plot_scatter`
+
+#### Fonksiyonlar:
+
+**`load_data(path: str)`** (import: `from utils import plot_scatter`)
+- Ham veriyi CSV formatında yükler
+- İlk iki sütun özellikler (features), üçüncü sütun etiket (label)
+- 101 örnek, 2 özellik, ikili sınıflandırma (0/1)
+
+**`normalize_features(X: np.ndarray)`**
+- Min-Max normalizasyonu uygular: `(X - min) / (max - min)`
+- Her özelliği [0, 1] aralığına ölçekler
+- Bölme hatasını önlemek için özel kontrol içerir
+
+**`split_data(X, y, train_ratio=0.6, val_ratio=0.2)`**
+- Veriyi **sıralı olarak** üç sete böler:
+  - Eğitim: İlk %60 (60 örnek)
+  - Doğrulama: Sonraki %20 (20 örnek)
+  - Test: Son %20 (21 örnek)
+- **Not**: Random shuffle yapılmaz, veri sıralı bölünür
+
+**`save_splits(prefix, train_data, val_data, test_data)`**
+- Train/val/test setlerini `.npz` formatında sıkıştırılmış olarak kaydeder
+- Her dosyada `X` (features) ve `y` (labels) arrays bulunur
+
+**`prepare_and_save_data()`**
+- Ana veri hazırlama pipeline'ı
+- Hem ham hem de normalize edilmiş versiyonları kaydeder
+- Scatter plot grafikleri oluşturur:
+  - Tüm verinin görselleştirmesi
+  - Eğitim verisinin görselleştirmesi
+
+### 2. `model.py` - Lojistik Regresyon Modeli
+
+Lojistik regresyon algoritmasının çekirdek implementasyonu.
+
+#### Fonksiyonlar:
+
+**`sigmoid(z: np.ndarray)`**
+```python
+σ(z) = 1 / (1 + e^(-z))
+```
+- Aktivasyon fonksiyonu
+- [-∞, +∞] aralığını [0, 1] olasılık aralığına dönüştürür
+
+**`predict_probabilities(X: np.ndarray, w: np.ndarray)`**
+```python
+p = σ(X · w)
+```
+- Özellik matrisi ve ağırlıklar ile olasılık tahmini yapar
+- Matris çarpımı sonrası sigmoid uygular
+
+**`cross_entropy_loss(y_true, y_pred)`**
+```python
+L = -1/N Σ[y·log(p) + (1-y)·log(1-p)]
+```
+- İkili sınıflandırma için kayıp fonksiyonu
+- `epsilon=1e-15` ile log(0) hatasını önler
+- `np.mean` kullanarak batch size'dan bağımsız kayıp hesaplar
+
+**`caclulate_gradient(X_i, y_i_true, y_i_pred)`**
+```python
+∇L = (p - y) · X
+```
+- Tek bir örnek için gradyan hesaplar
+- SGD için gerekli türev
+
+**`update_weights(w, gradient, learning_rate)`**
+```python
+w_new = w - η · ∇L
+```
+- Ağırlıkları gradyan descent ile günceller
+- η (eta): öğrenme oranı
+
+**`initialize_weights(n_features: int)`**
+- Ağırlıkları [-0.01, 0.01] aralığında rastgele başlatır
+- Küçük değerler ile başlamak eğitim stabilitesini artırır
+
+### 3. `train.py` - Model Eğitimi
+
+Lojistik regresyon modelini Stochastic Gradient Descent (SGD) ile eğitir.
+
+#### Ana Fonksiyon: `load_training_data`
+
+**`load_training_data(path_prefix='../data/normalized')`**
+- Normalize edilmiş eğitim ve doğrulama verilerini yükler
+- **Hata kontrolü**: Eğer veri dosyaları bulunamazsa `FileNotFoundError` fırlatır
+- Kullanıcıya önce veri hazırlamasını söyleyen açıklayıcı hata mesajı
+
+#### Ana Fonksiyon: `train_logistic_regression`
+
+**Parametreler:**
+- `learning_rate=0.01`: Öğrenme oranı
+- `n_epochs=100`: Epoch sayısı
+
+**SGD Algoritması:**
+```
+Her epoch için:
+    Her örnek için (tek tek):
+        1. Forward pass: tahmin yap
+        2. Loss hesapla
+        3. Gradyan hesapla
+        4. Ağırlıkları güncelle
+    Epoch sonu: ortalama train loss hesapla
+    Tüm val seti ile val loss hesapla
+```
+
+**Özellikler:**
+- **Bias Term**: Özellik matrisine otomatik bias sütunu eklenir (1'lerden oluşan)
+- **Batch-by-Batch**: Her örnek tek tek işlenir (true SGD)
+- **Dual Tracking**: Hem eğitim hem doğrulama kaybı kaydedilir
+- **Progress Monitoring**: Her epoch'ta kayıplar yazdırılır
+
+#### `add_bias_term(X)`
+```python
+X_bias = [1, x1, x2, ..., xn]  # Her satıra 1 eklenir
+```
+- Bias terimi ekler (w0 için)
+- n_features → n_features + 1
+
+### 4. `eval.py` - Model Değerlendirme
+
+Eğitilmiş modeli test verisinde değerlendirir.
+
+#### Ana Fonksiyon: `evaluate_model`
+
+**Değerlendirme Adımları:**
+1. Olasılık tahminleri yap
+2. Threshold=0.5 ile binary predictions elde et
+3. Tüm metrikleri hesapla
+
+**Dönen Metrikler:**
+- Loss
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+
+### 5. `metrics.py` - Performans Metrikleri
+
+Sınıflandırma performans metriklerini hesaplar.
+
+#### Confusion Matrix
+
+```
+                Predicted
+               0       1
+Actual  0    TN      FP
+        1    FN      TP
+```
+
+**`confusion_matrix(y_true, y_pred)`**
+- True Positive (TP): Doğru pozitif tahminler
+- True Negative (TN): Doğru negatif tahminler
+- False Positive (FP): Yanlış pozitif tahminler (Type I error)
+- False Negative (FN): Yanlış negatif tahminler (Type II error)
+
+#### Metrikler
+
+**`accuracy(y_true, y_pred)`**
+```python
+Accuracy = (TP + TN) / (TP + TN + FP + FN)
+```
+- Genel doğruluk oranı
+- Tüm doğru tahminlerin oranı
+
+**`precision(y_true, y_pred)`**
+```python
+Precision = TP / (TP + FP)
+```
+- Pozitif tahminlerin ne kadarı doğru
+- "Tahmin ettiğim pozitiflerin güvenilirliği"
+
+**`recall(y_true, y_pred)`**
+```python
+Recall = TP / (TP + FN)
+```
+- Gerçek pozitiflerin ne kadarını bulduk
+- "Tüm pozitifleri bulma yeteneğim"
+
+**`f1_score(y_true, y_pred)`**
+```python
+F1 = 2 × (Precision × Recall) / (Precision + Recall)
+```
+- Precision ve Recall'ın harmonik ortalaması
+- Dengesiz veri setlerinde daha bilgilendirici
+
+**Özel Durumlar:**
+- Tüm fonksiyonlar division by zero kontrolü içerir
+- Tanımsız durumlarda 0.0 döner
+
+### 6. `utils.py` - Yardımcı Fonksiyonlar
+
+Görselleştirme ve dosya yönetimi fonksiyonları.
+
+#### `ensure_dir_exists(directory)`
+- Dizin yoksa oluşturur
+- `os.makedirs()` ile recursive oluşturma
+
+#### `plot_scatter(X, y, data='tüm', save_path='../results/graphs/')`
+- Veriyi 2D scatter plot olarak çizer
+- İki sınıfı farklı renklerle gösterir:
+  - **Kalanlar (Class 0)**: Kırmızı 'x' - Sınavdan kalan öğrenciler
+  - **Geçenler (Class 1)**: Mavi 'o' - Sınavdan geçen öğrenciler
+- Eksen etiketleri: "Sınav 1" ve "Sınav 2"
+- Bias sütununu otomatik atlar
+- Grafik dosya adı: `{data}_scatter_plot.png`
+- Varsayılan kayıt yolu: `../results/graphs/`
+
+#### `plot_loss_curve(train_losses, val_losses, save_path='../results/graphs/')`
+- Eğitim ve doğrulama kayıplarını epoch'a göre çizer
+- Overfitting/underfitting tespiti için kritik
+- İki eğriyi aynı grafikte gösterir
+- Grafik dosya adı: `loss_curve.png`
+- Varsayılan kayıt yolu: `../results/graphs/`
+
+#### `save_weights(w, save_dir='../results/model/')`
+- Model ağırlıklarını `.npy` formatında kaydeder
+- **İki ayrı dosya olarak kaydeder**:
+  1. Timestamp ile isimlendirilen versiyon: `model_weights_YYYYMMDD_HHMMSS.npy`
+  2. En son model: `model_weights_latest.npy` (her eğitimde üzerine yazılır)
+- Varsayılan kayıt yolu: `../results/model/`
+- Timestamp'li versiyon farklı eğitimleri karıştırmadan saklar
+
+## 🧮 Algoritma Detayları
+
+### Lojistik Regresyon Matematiği
+
+#### 1. Hipotez Fonksiyonu
+```
+h(x) = σ(w^T · x) = 1 / (1 + e^(-w^T·x))
+```
+
+#### 2. Karar Kuralı
+```
+y_pred = 1  if h(x) ≥ 0.5
+y_pred = 0  if h(x) < 0.5
+```
+
+#### 3. Kayıp Fonksiyonu (Cross-Entropy)
+```
+L(w) = -1/m Σ[y^(i) log(h(x^(i))) + (1-y^(i)) log(1-h(x^(i)))]
+```
+
+#### 4. Gradyan
+```
+∂L/∂w = 1/m Σ[(h(x^(i)) - y^(i)) · x^(i)]
+```
+
+#### 5. Güncelleme Kuralı (SGD)
+```
+w := w - η · (h(x^(i)) - y^(i)) · x^(i)
+```
+
+### Stochastic Gradient Descent (SGD)
+
+Bu implementasyon **true SGD** kullanır:
+- Her örnekte ağırlık güncellenir
+- Mini-batch veya batch GD değil
+-장단점:
+  - ✅ Hızlı güncelleme
+  - ✅ Memory efficient
+  - ✅ Lokal minimumlardan kaçınabilir
+  - ⚠️ Daha gürültülü öğrenme
+  - ⚠️ Daha fazla iterasyon gerekebilir
+
+### Normalizasyon
+
+**Min-Max Scaling** kullanılır:
+```
+X_norm = (X - X_min) / (X_max - X_min)
+```
+
+**Neden Normalizasyon?**
+- Farklı ölçeklerdeki özellikleri eşitler
+- Gradyan descent'i hızlandırır
+- Sayısal stabiliteyi artırır
+- Öğrenme oranı seçimini kolaylaştırır
+
+## 📊 Sonuçlar
+
+### Model Performansı
+
+Model başarılı şekilde eğitilir ve şu metrikler hesaplanır:
+
+- **Accuracy**: Genel doğruluk oranı
+- **Precision**: Pozitif tahminlerin güvenilirliği
+- **Recall**: Tüm pozitifleri yakalama oranı
+- **F1 Score**: Precision ve recall dengesi
+
+### Çıktı Dosyaları
+
+1. **Scatter Plots** (`results/graphs/`)
+   - `tüm_scatter_plot.png`: Tüm veri setinin görselleştirmesi
+   - `train_scatter_plot.png`: Eğitim verisinin görselleştirmesi
+   - Her sınıf farklı renk ve işaretle gösterilir
+   - Eksenler: Sınav 1 ve Sınav 2 skorları
+
+2. **Loss Curve** (`results/graphs/loss_curve.png`)
+   - Eğitim ve doğrulama kayıplarının epoch'a göre değişimi
+   - Overfitting kontrolü için kullanılır
+   - Mavi: Eğitim kaybı, Turuncu: Doğrulama kaybı
+
+3. **Model Weights** (`results/model/`)
+   - `model_weights_YYYYMMDD_HHMMSS.npy`: Timestamp'li versiyon
+   - `model_weights_latest.npy`: En son eğitilmiş model
+   - Her ikisi de `numpy.load()` ile yüklenebilir
+   - Timestamp'li versiyon her çalıştırmada yeni dosya oluşturur
+   - Latest versiyon her eğitimde güncellenir
+
+## 🔧 Gereksinimler
+
+```
+numpy>=1.19.0
+matplotlib>=3.3.0
+```
+
+### Kurulum:
+```bash
+pip install numpy matplotlib
+```
+
+## 📝 Notlar
+
+### Veri Seti Özellikleri
+- **Toplam örnek**: 101
+- **Özellik sayısı**: 2 (Sınav 1 ve Sınav 2 skorları)
+- **Sınıf sayısı**: 2 (binary classification)
+  - **Class 0**: Kalanlar (sınavdan geçemeyen öğrenciler)
+  - **Class 1**: Geçenler (sınavdan geçen öğrenciler)
+- **Format**: CSV (virgülle ayrılmış)
+- **Split**: 60-20-20 (train-val-test)
+- **Dosya yolları**: Göreli yollar kullanılır (`../data/`, `../results/`)
+
+### Hiperparametreler
+- **Learning Rate**: 0.01
+- **Epochs**: 100
+- **Weight Initialization**: Uniform(-0.01, 0.01)
+- **Threshold**: 0.5 (classification)
+- **Epsilon**: 1e-15 (numerical stability)
+
+### Kod Kalitesi
+- Type hints kullanılmış (Python 3.7+)
+- Detaylı docstring'ler
+- Modüler yapı
+- Error handling:
+  - Division by zero (metrics.py)
+  - Log(0) prevention (model.py)
+  - File not found (train.py)
+- Tutarlı isimlendirme
+- Göreli dosya yolları (taşınabilir kod)
+- Otomatik dizin oluşturma
+
+## 🤝 Katkıda Bulunma
+
+Bu proje bir ödev projesidir. Geliştirmeler için:
+1. Farklı optimizasyon algoritmaları (Adam, RMSprop)
+2. Regularization (L1, L2)
+3. Feature engineering
+4. Hiperparametre optimizasyonu
+5. Cross-validation
+
+## 📄 Lisans
+
+Bu proje eğitim amaçlıdır.
+
+---
+
+**Son Güncelleme**: Kasım 2025  
+**Python Version**: 3.7+  
+**NumPy Version**: 1.19+
