@@ -1,1 +1,3 @@
 /results/model/model_weights_2*
+*.pyc
+__pycache__/
