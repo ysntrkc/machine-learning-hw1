@@ -17,33 +17,42 @@ Bu proje, **NumPy** kullanarak sıfırdan lojistik regresyon algoritmasını uyg
 ```
 makine-ogrenmesi-hw1/
 │
-├── data/                           # Veri setleri
-│   ├── hw1Data.txt                # Ham veri (101 örnek, 2 özellik, 1 etiket)
-│   ├── raw_train.npz              # Ham eğitim verisi (%60)
-│   ├── raw_val.npz                # Ham doğrulama verisi (%20)
-│   ├── raw_test.npz               # Ham test verisi (%20)
-│   ├── normalized_train.npz       # Normalize edilmiş eğitim verisi
-│   ├── normalized_val.npz         # Normalize edilmiş doğrulama verisi
-│   └── normalized_test.npz        # Normalize edilmiş test verisi
+├── data/                            # Veri setleri
+│   ├── hw1Data.txt                  # Ham veri (101 örnek, 2 özellik, 1 etiket)
+│   ├── raw_train.npz                # Ham eğitim verisi (%60)
+│   ├── raw_val.npz                  # Ham doğrulama verisi (%20)
+│   ├── raw_test.npz                 # Ham test verisi (%20)
+│   ├── normalized_train.npz         # Normalize edilmiş eğitim verisi
+│   ├── normalized_val.npz           # Normalize edilmiş doğrulama verisi
+│   └── normalized_test.npz          # Normalize edilmiş test verisi
 │
-├── results/                        # Sonuçlar ve çıktılar
-│   ├── graphs/                     # Grafikler
-│   │   ├── loss_curve.png         # Eğitim/doğrulama kayıp grafiği
-│   │   ├── tüm_scatter_plot.png   # Tüm verinin scatter plot grafiği
-│   │   └── train_scatter_plot.png # Eğitim verisinin scatter plot grafiği
-│   └── model/                      # Eğitilmiş model ağırlıkları
-│       ├── model_weights_*.npy    # Zaman damgalı model dosyaları
+├── docs/                            # Dokümanlar
+│   └── ML2025Hw1.pdf                # Ödev açıklaması ve talimatlar
+│
+├── results/                         # Sonuçlar ve çıktılar
+│   ├── evaluation/                  # Değerlendirme sonuçları
+│   │   └── test_results.txt         # Test seti metrik sonuçları
+│   ├── graphs/                      # Grafikler
+│   │   ├── loss_curve.png           # Eğitim/doğrulama kayıp grafiği
+│   │   ├── tüm_scatter_plot.png     # Tüm verinin scatter plot grafiği
+│   │   └── train_scatter_plot.png   # Eğitim verisinin scatter plot grafiği
+│   ├── logs/                        # Eğitim logları
+│   │   └── training.log             # Epoch bazlı eğitim logları
+│   └── model/                       # Eğitilmiş model ağırlıkları
+│       ├── model_weights_*.npy      # Zaman damgalı model dosyaları
 │       └── model_weights_latest.npy # En son eğitilmiş model
 │
-├── src/                            # Kaynak kod
-│   ├── dataset.py                 # Veri yükleme ve ön işleme
-│   ├── model.py                   # Lojistik regresyon modeli
-│   ├── train.py                   # Model eğitimi
-│   ├── eval.py                    # Model değerlendirme
-│   ├── metrics.py                 # Değerlendirme metrikleri
-│   └── utils.py                   # Yardımcı fonksiyonlar
+├── src/                             # Kaynak kod
+│   ├── dataset.py                   # Veri yükleme ve ön işleme
+│   ├── model.py                     # Lojistik regresyon modeli
+│   ├── train.py                     # Model eğitimi
+│   ├── eval.py                      # Model değerlendirme
+│   ├── metrics.py                   # Değerlendirme metrikleri
+│   ├── logger.py                    # Birleşik loglama sistemi
+│   └── utils.py                     # Yardımcı fonksiyonlar
 │
-└── README.md                       # Bu dosya
+├── requirements.txt                 # Gerekli Python kütüphaneleri
+└── README.md                        # Bu dosya
 ```
 
 ## 🚀 Kurulum
@@ -62,7 +71,7 @@ git clone <repository-url>
 cd makine-ogrenmesi-hw1
 ```
 
-2. (Opsiyonel) Sanal ortam oluşturun:
+2. (Opsiyonel) Sanal ortam oluşturun ve aktifleştirin:
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/MacOS
@@ -72,25 +81,54 @@ venv\Scripts\activate     # Windows
 3. Gerekli kütüphaneleri yükleyin:
 ```bash
 pip install -r requirements.txt
-
 ```
 
 ## 💻 Kullanım
 
 ### 1. Model Eğitimi
 
-Modeli eğitmek için:
+Modeli varsayılan parametrelerle eğitmek için:
 
 ```bash
 cd src
 python train.py
 ```
 
+**Komut Satırı Argümanları:**
+
+```bash
+python train.py [-lr LEARNING_RATE] [-e EPOCHS] [-l LOG_MODE]
+```
+
+- `-lr, --learning_rate`: Öğrenme oranı (varsayılan: 0.01)
+- `-e, --epochs`: Epoch sayısı (varsayılan: 100)
+- `-l, --log`: Log modu (varsayılan: both)
+  - `both`: Konsol ve dosyaya loglama
+  - `console`: Sadece konsola loglama
+  - `file`: Sadece dosyaya loglama
+
+**Örnek Kullanım:**
+
+```bash
+# Varsayılan parametrelerle eğitim
+python train.py
+
+# Özel learning rate ve epoch sayısı
+python train.py -lr 0.001 -e 200
+
+# Sadece konsola loglama
+python train.py -l console
+
+# Tüm parametrelerle
+python train.py -lr 0.005 -e 150 -l file
+```
+
 Bu komut:
 - Veriyi yükler ve normalize eder
 - Train/val/test setlerine ayırır (%60/%20/%20)
 - Scatter plot grafikleri oluşturur (tüm veri ve eğitim verisi)
-- 100 epoch boyunca SGD ile modeli eğitir
+- Belirtilen epoch sayısı boyunca SGD ile modeli eğitir
+- Eğitim ilerlemesini konsola ve/veya dosyaya loglar
 - Kayıp grafiğini oluşturur (`results/graphs/loss_curve.png`)
 - Model ağırlıklarını iki versiyonda kaydeder:
   - Timestamp'li versiyon: `model_weights_YYYYMMDD_HHMMSS.npy`
@@ -104,12 +142,37 @@ Eğitilmiş modeli test setinde değerlendirmek için:
 python eval.py
 ```
 
+**Komut Satırı Argümanları:**
+
+```bash
+python eval.py [-l LOG_MODE]
+```
+
+- `-l, --log`: Log modu (varsayılan: both)
+  - `both`: Konsol ve dosyaya loglama
+  - `console`: Sadece konsola loglama
+  - `file`: Sadece dosyaya loglama
+
+**Örnek Kullanım:**
+
+```bash
+# Varsayılan (konsol ve dosyaya)
+python eval.py
+
+# Sadece konsola yazdırma
+python eval.py -l console
+
+# Sadece dosyaya kaydetme
+python eval.py -l file
+```
+
 Bu komut şu metrikleri yazdırır:
 - **Loss (Kayıp)**: Cross-entropy loss
 - **Accuracy (Doğruluk)**: Genel doğru tahmin oranı
 - **Precision (Kesinlik)**: Pozitif tahminlerin doğruluk oranı
 - **Recall (Duyarlılık)**: Gerçek pozitifleri bulma oranı
 - **F1 Score**: Precision ve recall'ın harmonik ortalaması
+- **Confusion Matrix**: Detaylı tablo formatında confusion matrix
 
 ### 3. Veri Hazırlama (Opsiyonel)
 
@@ -284,37 +347,63 @@ Actual  0    TN      FP
 
 #### Metrikler
 
-**`accuracy(y_true, y_pred)`**
+**`accuracy(y_true=None, y_pred=None, conf_matrix=None)`**
 ```python
 Accuracy = (TP + TN) / (TP + TN + FP + FN)
 ```
 - Genel doğruluk oranı
 - Tüm doğru tahminlerin oranı
+- **İki kullanım şekli:**
+  1. `y_true` ve `y_pred` vererek: Otomatik confusion matrix hesaplar
+  2. `conf_matrix` vererek: Önceden hesaplanmış confusion matrix kullanır (daha verimli)
 
-**`precision(y_true, y_pred)`**
+**`precision(y_true=None, y_pred=None, conf_matrix=None)`**
 ```python
 Precision = TP / (TP + FP)
 ```
 - Pozitif tahminlerin ne kadarı doğru
 - "Tahmin ettiğim pozitiflerin güvenilirliği"
+- **İki kullanım şekli:**
+  1. `y_true` ve `y_pred` vererek
+  2. `conf_matrix` vererek (daha verimli)
 
-**`recall(y_true, y_pred)`**
+**`recall(y_true=None, y_pred=None, conf_matrix=None)`**
 ```python
 Recall = TP / (TP + FN)
 ```
 - Gerçek pozitiflerin ne kadarını bulduk
 - "Tüm pozitifleri bulma yeteneğim"
+- **İki kullanım şekli:**
+  1. `y_true` ve `y_pred` vererek
+  2. `conf_matrix` vererek (daha verimli)
 
-**`f1_score(y_true, y_pred)`**
+**`f1_score(y_true=None, y_pred=None, conf_matrix=None)`**
 ```python
 F1 = 2 × (Precision × Recall) / (Precision + Recall)
 ```
 - Precision ve Recall'ın harmonik ortalaması
 - Dengesiz veri setlerinde daha bilgilendirici
+- **İki kullanım şekli:**
+  1. `y_true` ve `y_pred` vererek
+  2. `conf_matrix` vererek (daha verimli)
 
 **Özel Durumlar:**
 - Tüm fonksiyonlar division by zero kontrolü içerir
 - Tanımsız durumlarda 0.0 döner
+- `conf_matrix` parametresi kullanıldığında daha verimli çalışır (confusion matrix'i tekrar hesaplamaz)
+
+**Kullanım Örneği:**
+```python
+# Metod 1: y_true ve y_pred ile
+acc = accuracy(y_true, y_pred)
+
+# Metod 2: Önceden hesaplanmış confusion matrix ile (daha verimli)
+conf_mat = confusion_matrix(y_true, y_pred)
+acc = accuracy(conf_matrix=conf_mat)
+prec = precision(conf_matrix=conf_mat)
+rec = recall(conf_matrix=conf_mat)
+f1 = f1_score(conf_matrix=conf_mat)
+```
 
 ### 6. `utils.py` - Yardımcı Fonksiyonlar
 
@@ -348,6 +437,86 @@ Görselleştirme ve dosya yönetimi fonksiyonları.
   2. En son model: `model_weights_latest.npy` (her eğitimde üzerine yazılır)
 - Varsayılan kayıt yolu: `../results/model/`
 - Timestamp'li versiyon farklı eğitimleri karıştırmadan saklar
+
+#### `parse_training_args()`
+- Komut satırı argümanlarını parse eder
+- Desteklenen argümanlar:
+  - `-lr, --learning_rate`: Öğrenme oranı (float, varsayılan: 0.01)
+  - `-e, --epochs`: Epoch sayısı (int, varsayılan: 100)
+  - `-l, --log`: Log modu (str, varsayılan: "both")
+- `argparse.Namespace` objesi döndürür
+
+#### `print_training_config(learning_rate, n_epochs)`
+- Eğitim konfigürasyonunu formatlı şekilde ekrana yazdırır
+- Learning rate ve epoch sayısını gösterir
+- Eğitim başlamadan önce çağrılır
+
+#### `print_confusion_matrix(conf_matrix)`
+- Confusion matrix'i tablo formatında görselleştirir
+- TP, TN, FP, FN değerlerini gösterir
+- Özet bilgiler:
+  - Toplam örnek sayısı
+  - Gerçek pozitif/negatif sayıları
+  - Tahmin pozitif/negatif sayıları
+- Kullanıcı dostu tablo formatı
+
+#### `log_test_results(results, log_file='../results/evaluation/test_results.txt')`
+- Test sonuçlarını dosyaya kaydeder
+- Timestamp ile birlikte kaydedilir
+- Tüm metrikleri (loss, accuracy, precision, recall, f1_score) içerir
+
+### 7. `logger.py` - Birleşik Loglama Sistemi
+
+Proje genelinde birleşik loglama sağlayan modül. Konsola, dosyaya veya her ikisine birden loglama yapabilir.
+
+#### `Logger` Sınıfı
+
+**`__init__(log_file='../results/logs/training.log', mode='both')`**
+- Loglama sistemi için ana sınıf
+- **Parametreler:**
+  - `log_file`: Log dosyasının yolu
+  - `mode`: Loglama modu
+    - `"both"`: Hem konsol hem dosya
+    - `"console"`: Sadece konsol
+    - `"file"`: Sadece dosya
+- Context manager destekler (`with` statement)
+
+**`log(message, end='\n')`**
+- Mesajı seçilen moda göre loglar
+- `print()` gibi çalışır ama dosyaya da yazar
+- Otomatik flush ile anında yazma
+
+**`close()`**
+- Log dosyasını kapatır
+- Kaynakları temizler
+
+#### Yardımcı Fonksiyonlar:
+
+**`setup_logger(log_file='../results/logs/training.log', mode='both')`**
+- Global logger instance'ı oluşturur ve yapılandırır
+- Önceki logger varsa kapatır ve yenisini oluşturur
+- Train ve eval modülleri tarafından kullanılır
+
+**`get_logger()`**
+- Global logger instance'ını döndürür
+- Yoksa otomatik olarak oluşturur
+
+**`log(message, end='\n')`**
+- Kolaylık fonksiyonu
+- Global logger'ı kullanarak mesaj loglar
+- Tüm modüllerde `from logger import log` ile import edilir
+
+**Kullanım Örneği:**
+```python
+from logger import setup_logger, log
+
+# Logger'ı yapılandır
+setup_logger(mode='both')
+
+# Log kullan
+log("Training started")
+log(f"Epoch {epoch}: Loss = {loss:.4f}")
+```
 
 ## 🧮 Algoritma Detayları
 
