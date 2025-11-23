@@ -1,16 +1,16 @@
 # Makine Öğrenmesi Ödev 1: Lojistik Regresyon
 
-Bu proje, **NumPy** kullanarak sıfırdan lojistik regresyon algoritmasını uygulayan eksiksiz bir makine öğrenmesi pipeline'ıdır. Proje, veri ön işleme, model eğitimi, değerlendirme ve görselleştirme adımlarını içerir.
+Bu proje, **NumPy** kullanarak sıfırdan lojistik regresyon algoritmasını uygulayan bir makine öğrenmesi pipeline'ıdır. Proje, veri ön işleme, model eğitimi, değerlendirme ve görselleştirme adımlarını içerir.
 
 ## 📋 İçindekiler
 
-[Proje Yapısı](#proje-yapısı)
-[Kurulum](#kurulum)
-[Kullanım](#kullanım)
-[Modüllerin Detaylı Açıklaması](#modüllerin-detaylı-açıklaması)
-[Algoritma Detayları](#algoritma-detayları)
-[Sonuçlar](#sonuçlar)
-[Notlar](#notlar)
+- [Proje Yapısı](#proje-yapısı)
+- [Kurulum](#kurulum)
+- [Kullanım](#kullanım)
+- [Modüllerin Detaylı Açıklaması](#modüllerin-detaylı-açıklaması)
+- [Algoritma Detayları](#algoritma-detayları)
+- [Sonuçlar](#sonuçlar)
+- [Notlar](#notlar)
 
 ## 🗂️ Proje Yapısı
 
