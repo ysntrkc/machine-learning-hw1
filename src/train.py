@@ -20,6 +20,7 @@ from utils import (
     parse_training_args,
     print_training_config,
     save_training_params,
+    plot_decision_boundary,
     log,
 )
 
@@ -29,6 +30,8 @@ def load_training_data(
 ) -> Tuple[
     Tuple[np.ndarray, np.ndarray],
     Tuple[np.ndarray, np.ndarray],
+    np.ndarray,
+    np.ndarray,
 ]:
     """
     Belirtilen önekle kaydedilmiş eğitim, doğrulama ve test setlerini yükler.
@@ -37,6 +40,8 @@ def load_training_data(
     Returns:
         train_data (tuple[np.ndarray, np.ndarray]): Eğitim verisi (X_train, y_train).
         val_data (tuple[np.ndarray, np.ndarray]): Doğrulama verisi (X_val, y_val).
+        raw_train_data (tuple[np.ndarray, np.ndarray]): Ham eğitim verisi.
+        raw_val_data (tuple[np.ndarray, np.ndarray]): Ham doğrulama verisi.
     """
     log(f"Loading data splits with prefix: {path_prefix}")
     if not os.path.exists(f"{path_prefix}_train.npz") or not os.path.exists(
@@ -55,9 +60,21 @@ def load_training_data(
     X_val = val_loaded["X"]
     y_val = val_loaded["y"]
 
+    # Load raw data for visualization
+    raw_train_loaded = np.load(f"{path_prefix.replace('normalized', 'raw')}_train.npz")
+    X_train_raw = raw_train_loaded["X"]
+
+    raw_val_loaded = np.load(f"{path_prefix.replace('normalized', 'raw')}_val.npz")
+    X_val_raw = raw_val_loaded["X"]
+
     log(f"Data splits loaded with prefix: {path_prefix}")
 
-    return (X_train, y_train), (X_val, y_val)
+    return (
+        (X_train, y_train),
+        (X_val, y_val),
+        X_train_raw,
+        X_val_raw,
+    )
 
 
 def add_bias_term(X: np.ndarray) -> np.ndarray:
@@ -201,7 +218,12 @@ def train(
 
     prepare_and_save_data()
 
-    (X_train, y_train), (X_val, y_val) = load_training_data("../data/normalized")
+    (
+        (X_train, y_train),
+        (X_val, y_val),
+        X_train_raw,
+        X_val_raw,
+    ) = load_training_data("../data/normalized")
 
     X_train = add_bias_term(X_train)
     X_val = add_bias_term(X_val)
@@ -232,6 +254,11 @@ def train(
         early_stopped=early_stopped,
     )
 
+    # Karar sınırı grafiğini çiz (eğitim ve doğrulama setleri için)
+    log("\nKarar sınırı grafikleri oluşturuluyor...")
+    plot_decision_boundary(X_train_raw, y_train, w, data="train")
+    plot_decision_boundary(X_val_raw, y_val, w, data="val")
+
     log("\n" + "=" * 70)
     log("Training completed and model saved.")
     if early_stopped:
@@ -244,7 +271,6 @@ def train(
 if __name__ == "__main__":
     args = parse_training_args()
 
-    # Setup logger with mode from command line arguments
     logger.setup_logger(mode=args.log)
 
     train(

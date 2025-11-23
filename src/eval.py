@@ -11,24 +11,31 @@ from utils import (
     log_test_results,
     print_confusion_matrix,
     load_training_params,
+    plot_decision_boundary,
     log,
 )
 
 
 def load_test_data(
     path_prefix: str = "data/normalized",
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Test veri setini yükler.
     Args:
         path_prefix (str): Veri seti dosyalarının bulunduğu dizin yolu.
     Returns:
-        tuple[np.ndarray, np.ndarray]: Özellik matrisi ve etiket vektörü.
+        tuple: (X_test_normalized, y_test, X_test_raw, y_test_raw)
     """
     test_loaded = np.load(f"../{path_prefix}_test.npz")
     X_test = test_loaded["X"]
     y_test = test_loaded["y"]
-    return X_test, y_test
+
+    # Load raw test data
+    raw_test_loaded = np.load(f"../{path_prefix.replace('normalized', 'raw')}_test.npz")
+    X_test_raw = raw_test_loaded["X"]
+    y_test_raw = raw_test_loaded["y"]
+
+    return X_test, y_test, X_test_raw, y_test_raw
 
 
 def add_bias_term(X: np.ndarray) -> np.ndarray:
@@ -91,7 +98,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Setup logger with mode from command line arguments
     logger.setup_logger(mode=args.log)
 
     log("\n" + "=" * 70)
@@ -101,7 +107,6 @@ if __name__ == "__main__":
         )
     )
 
-    # Load and display training parameters
     training_params = load_training_params()
     if training_params:
         log("=" * 70)
@@ -126,12 +131,16 @@ if __name__ == "__main__":
         log("=" * 70)
         log("")
 
-    X_test, y_test = load_test_data("data/normalized")
+    X_test, y_test, X_test_raw, y_test_raw = load_test_data("data/normalized")
     X_test = add_bias_term(X_test)
 
     weights = np.load("../results/model/model_weights_latest.npy")
 
     metrics, conf_matrix = evaluate_model(X_test, y_test, weights)
+
+    # Karar sınırı grafiğini çiz
+    log("\nKarar sınırı grafiği oluşturuluyor...")
+    plot_decision_boundary(X_test_raw, y_test, weights, data="test")
 
     log("=" * 70)
     log("TEST SETİ DEĞERLENDİRME SONUÇLARI".center(70))

@@ -70,6 +70,88 @@ def plot_scatter(
     plt.close()
 
 
+def plot_decision_boundary(
+    X_raw: np.ndarray,
+    y: np.ndarray,
+    weights: np.ndarray,
+    data: str = "test",
+    save_path: str = "../results/graphs/",
+) -> None:
+    """
+    Veri setini ve karar sınırını (decision boundary) çizer.
+    Ham (normalize edilmemiş) verileri kullanarak daha anlaşılır görselleştirme sağlar.
+    Args:
+        X_raw (np.ndarray): Ham (normalize edilmemiş) özellik matrisi.
+        y (np.ndarray): Hedef değişken vektörü.
+        weights (np.ndarray): Model ağırlıkları (bias dahil).
+        data (str): Veri seti türü (örneğin, "train", "val", "test").
+        save_path (str): Grafiğin kaydedileceği dosya yolu.
+    """
+    ensure_dir_exists(save_path)
+
+    X_plot = X_raw
+
+    class_0 = y == 0
+    class_1 = y == 1
+
+    plt.figure(figsize=(8, 6))  # type: ignore
+
+    # Veri noktalarını çiz (raw values)
+    plt.scatter(  # type: ignore
+        X_plot[class_0, 0],
+        X_plot[class_0, 1],
+        color="red",
+        label="Kalanlar (Class 0)",
+        alpha=0.6,
+        marker="x",
+        s=100,
+        linewidths=2,
+    )
+    plt.scatter(  # type: ignore
+        X_plot[class_1, 0],
+        X_plot[class_1, 1],
+        color="blue",
+        label="Geçenler (Class 1)",
+        alpha=0.6,
+        marker="o",
+        s=100,
+        linewidths=2,
+    )
+
+    x1_min, x1_max = X_plot[:, 0].min() - 5, X_plot[:, 0].max() + 5
+    x1_values_raw = np.linspace(x1_min, x1_max, 300)  # type: ignore
+    x1_raw_min, x1_raw_max = X_plot[:, 0].min(), X_plot[:, 0].max()
+    x2_raw_min, x2_raw_max = X_plot[:, 1].min(), X_plot[:, 1].max()
+
+    x1_values_norm = (x1_values_raw - x1_raw_min) / (x1_raw_max - x1_raw_min)  # type: ignore
+    w0, w1, w2 = weights[0], weights[1], weights[2]
+
+    if abs(w2) > 1e-10:
+        x2_values_norm = -(w0 + w1 * x1_values_norm) / w2  # type: ignore
+        x2_values_raw = x2_values_norm * (x2_raw_max - x2_raw_min) + x2_raw_min  # type: ignore
+
+        plt.plot(  # type: ignore
+            x1_values_raw,  # type: ignore
+            x2_values_raw,  # type: ignore
+            color="green",
+            linewidth=2.5,
+            label="Karar Sınırı (Decision Boundary)",
+        )
+
+    plt.title(f"{data.capitalize()} Veri Seti - Karar Sınırı ile", fontsize=14, fontweight="bold")  # type: ignore
+    plt.xlabel("Sınav 1", fontsize=12)  # type: ignore
+    plt.ylabel("Sınav 2", fontsize=12)  # type: ignore
+    plt.legend(fontsize=11)  # type: ignore
+    plt.grid(True, alpha=0.3)  # type: ignore
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_path, f"{data}_decision_boundary.png"))  # type: ignore
+    plt.close()
+
+    log(
+        f"Karar sınırı grafiği kaydedildi: {os.path.join(save_path, f'{data}_decision_boundary.png')}"
+    )
+
+
 def plot_loss_curve(
     train_losses: list[float],
     val_losses: list[float],
@@ -269,9 +351,9 @@ def print_training_config(
         min_delta (float): Early stopping minimum delta.
         early_stopping_enabled (bool): Early stopping aktif mi.
     """
-    log("=" * 50)
-    log("EĞITIM KONFIGÜRASYONU")
-    log("=" * 50)
+    log("=" * 70)
+    log("EĞITIM KONFIGÜRASYONU".center(70))
+    log("=" * 70)
     log(f"Learning Rate: {learning_rate}")
     log(f"Epoch Sayısı: {n_epochs}")
     if early_stopping_enabled and patience is not None:
@@ -280,8 +362,7 @@ def print_training_config(
         log(f"  - Min Delta: {min_delta}")
     else:
         log("Early Stopping: Devre Dışı")
-    log("=" * 50)
-    log("")
+    log("=" * 70 + "\n")
 
 
 def print_confusion_matrix(

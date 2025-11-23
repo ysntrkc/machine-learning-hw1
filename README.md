@@ -144,6 +144,7 @@ Bu komut:
   - Early stopping tetiklendiğinde en iyi ağırlıklar geri yüklenir
 - Eğitim ilerlemesini konsola ve/veya dosyaya loglar
 - Kayıp grafiğini oluşturur (`results/graphs/loss_curve.png`)
+- **Karar sınırı grafiklerini oluşturur** (`train_decision_boundary.png`, `val_decision_boundary.png`)
 - Model ağırlıklarını iki versiyonda kaydeder:
   - Timestamp'li versiyon: `model_weights_YYYYMMDD_HHMMSS.npy`
   - Son model: `model_weights_latest.npy`
@@ -189,6 +190,7 @@ Bu komut şu metrikleri yazdırır:
 - **Recall (Duyarlılık)**: Gerçek pozitifleri bulma oranı
 - **F1 Score**: Precision ve recall'ın harmonik ortalaması
 - **Confusion Matrix**: Detaylı tablo formatında confusion matrix
+- **Karar Sınırı Grafiği**: Test verisi üzerinde model karar sınırı (`test_decision_boundary.png`)
 
 ### 3. Veri Hazırlama (Opsiyonel)
 
@@ -446,6 +448,29 @@ Görselleştirme ve dosya yönetimi fonksiyonları.
 - Grafik dosya adı: `loss_curve.png`
 - Varsayılan kayıt yolu: `../results/graphs/`
 
+#### `plot_decision_boundary(X_normalized, y, weights, X_raw, data='test', save_path='../results/graphs/')` **✨ YENİ**
+- Veri noktalarını ve lojistik regresyon karar sınırını birlikte çizer
+- **Orijinal (normalize edilmemiş) değerleri kullanır** - daha anlaşılır görselleştirme
+- **Karar Sınırı Hesaplama:**
+  - Model normalize edilmiş verilerle eğitilir: `w0 + w1*x1_norm + w2*x2_norm = 0`
+  - Karar sınırı orijinal ölçeğe dönüştürülür
+  - Bu doğru, sigmoid fonksiyonunun 0.5 değerini aldığı noktaları gösterir
+  - Doğrunun üstündeki noktalar Class 1, altındakiler Class 0 olarak tahmin edilir
+- **Parametreler:**
+  - `X_normalized`: Normalize edilmiş özellik matrisi (bias terimi içerebilir)
+  - `y`: Gerçek etiketler
+  - `weights`: Model ağırlıkları [w0 (bias), w1, w2]
+  - `X_raw`: Ham (normalize edilmemiş) özellik matrisi
+  - `data`: Veri seti türü (grafik başlığı için)
+- **Görselleştirme:**
+  - Kırmızı 'x': Kalanlar (Class 0)
+  - Mavi 'o': Geçenler (Class 1)
+  - Yeşil çizgi: Karar sınırı (Decision Boundary)
+  - Eksen etiketleri: "Sınav 1" ve "Sınav 2" (orijinal değerler)
+- Grafik dosya adı: `{data}_decision_boundary.png`
+- Yüksek çözünürlük (150 DPI)
+- Eğitim sonrası otomatik olarak train, val ve test setleri için oluşturulur
+
 #### `save_weights(w, save_dir='../results/model/')`
 - Model ağırlıklarını `.npy` formatında kaydeder
 - **İki ayrı dosya olarak kaydeder**:
@@ -677,19 +702,30 @@ Model başarılı şekilde eğitilir ve şu metrikler hesaplanır:
    - Her sınıf farklı renk ve işaretle gösterilir
    - Eksenler: Sınav 1 ve Sınav 2 skorları
 
-2. **Loss Curve** (`results/graphs/loss_curve.png`)
+2. **Decision Boundary Plots** (`results/graphs/`) **✨ YENİ**
+   - `train_decision_boundary.png`: Eğitim verisi üzerinde karar sınırı
+   - `val_decision_boundary.png`: Doğrulama verisi üzerinde karar sınırı
+   - `test_decision_boundary.png`: Test verisi üzerinde karar sınırı
+   - Yeşil çizgi: Lojistik regresyon karar sınırı (decision boundary)
+   - Kırmızı 'x': Kalanlar (Class 0)
+   - Mavi 'o': Geçenler (Class 1)
+   - **Orijinal (normalize edilmemiş) Sınav 1 ve Sınav 2 skorları kullanılır**
+   - Modelin sınıfları nasıl ayırdığını görsel olarak gösterir
+   - Karar sınırı normalize edilmiş modelden hesaplanır ve orijinal ölçeğe dönüştürülür
+
+3. **Loss Curve** (`results/graphs/loss_curve.png`)
    - Eğitim ve doğrulama kayıplarının epoch'a göre değişimi
    - Overfitting kontrolü için kullanılır
    - Mavi: Eğitim kaybı, Turuncu: Doğrulama kaybı
 
-3. **Model Weights** (`results/model/`)
+4. **Model Weights** (`results/model/`)
    - `model_weights_YYYYMMDD_HHMMSS.npy`: Timestamp'li versiyon
    - `model_weights_latest.npy`: En son eğitilmiş model
    - Her ikisi de `numpy.load()` ile yüklenebilir
    - Timestamp'li versiyon her çalıştırmada yeni dosya oluşturur
    - Latest versiyon her eğitimde güncellenir
 
-4. **Training Parameters** (`results/model/training_params.json`)
+5. **Training Parameters** (`results/model/training_params.json`)
    - Eğitim parametrelerini JSON formatında saklar
    - İçerik:
      - `learning_rate`: Öğrenme oranı
@@ -758,6 +794,7 @@ Bu proje bir ödev projesidir. Geliştirmeler için:
 4. Hiperparametre optimizasyonu
 5. Cross-validation
 6. ~~Early stopping~~ ✅ (Eklendi!)
+7. ~~Decision boundary visualization~~ ✅ (Eklendi!)
 
 ## 📄 Lisans
 
@@ -768,4 +805,4 @@ Bu proje eğitim amaçlıdır.
 **Son Güncelleme**: Kasım 2025  
 **Python Version**: 3.7+  
 **NumPy Version**: 1.19+  
-**Yeni Özellikler**: Early Stopping, Training Parameter Tracking
+**Yeni Özellikler**: Early Stopping, Training Parameter Tracking, Decision Boundary Visualization

@@ -1,0 +1,129 @@
+
+======================================================================
+           MODEL EĞİTİMİ BAŞLATILDI (2025-11-23 16:30:34)
+            
+======================================================================
+                        EĞITIM KONFIGÜRASYONU                         
+======================================================================
+Learning Rate: 0.01
+Epoch Sayısı: 500
+Early Stopping: Aktif
+  - Patience: 5
+  - Min Delta: 0.001
+======================================================================
+
+Loading data splits with prefix: ../data/normalized
+Data splits loaded with prefix: ../data/normalized
+======================================================================
+Starting training for 500 epochs with learning rate 0.01
+======================================================================
+Epoch   1/500 - Train Loss: 0.6907 - Val Loss: 0.6819 * - No Improve: 0
+Epoch  10/500 - Train Loss: 0.6465 - Val Loss: 0.6338 * - No Improve: 0
+Epoch  20/500 - Train Loss: 0.6135 - Val Loss: 0.6002 * - No Improve: 0
+Epoch  30/500 - Train Loss: 0.5848 - Val Loss: 0.5717 * - No Improve: 0
+Epoch  40/500 - Train Loss: 0.5595 - Val Loss: 0.5467 * - No Improve: 0
+Epoch  50/500 - Train Loss: 0.5371 - Val Loss: 0.5247 * - No Improve: 0
+Epoch  60/500 - Train Loss: 0.5172 - Val Loss: 0.5052 * - No Improve: 0
+Epoch  70/500 - Train Loss: 0.4994 - Val Loss: 0.4878 * - No Improve: 0
+Epoch  80/500 - Train Loss: 0.4835 - Val Loss: 0.4722 * - No Improve: 0
+Epoch  90/500 - Train Loss: 0.4691 - Val Loss: 0.4582 * - No Improve: 0
+Epoch 100/500 - Train Loss: 0.4561 - Val Loss: 0.4455 * - No Improve: 0
+Epoch 110/500 - Train Loss: 0.4443 - Val Loss: 0.4339 * - No Improve: 0
+Epoch 120/500 - Train Loss: 0.4335 - Val Loss: 0.4234 * - No Improve: 0
+Epoch 130/500 - Train Loss: 0.4236 - Val Loss: 0.4137 - No Improve: 1
+Epoch 140/500 - Train Loss: 0.4145 - Val Loss: 0.4048 - No Improve: 1
+Epoch 150/500 - Train Loss: 0.4061 - Val Loss: 0.3965 - No Improve: 1
+Epoch 160/500 - Train Loss: 0.3983 - Val Loss: 0.3889 - No Improve: 1
+Epoch 170/500 - Train Loss: 0.3912 - Val Loss: 0.3818 - No Improve: 1
+Epoch 180/500 - Train Loss: 0.3845 - Val Loss: 0.3752 - No Improve: 1
+Epoch 190/500 - Train Loss: 0.3782 - Val Loss: 0.3691 - No Improve: 1
+Epoch 200/500 - Train Loss: 0.3724 - Val Loss: 0.3633 - No Improve: 1
+Epoch 210/500 - Train Loss: 0.3669 - Val Loss: 0.3579 - No Improve: 1
+Epoch 220/500 - Train Loss: 0.3618 - Val Loss: 0.3528 * - No Improve: 0
+Epoch 230/500 - Train Loss: 0.3570 - Val Loss: 0.3480 - No Improve: 1
+Epoch 240/500 - Train Loss: 0.3525 - Val Loss: 0.3435 - No Improve: 2
+Epoch 250/500 - Train Loss: 0.3482 - Val Loss: 0.3392 * - No Improve: 0
+Epoch 260/500 - Train Loss: 0.3442 - Val Loss: 0.3352 - No Improve: 1
+Epoch 270/500 - Train Loss: 0.3404 - Val Loss: 0.3314 - No Improve: 2
+Epoch 280/500 - Train Loss: 0.3368 - Val Loss: 0.3277 * - No Improve: 0
+Epoch 290/500 - Train Loss: 0.3334 - Val Loss: 0.3243 - No Improve: 1
+Epoch 300/500 - Train Loss: 0.3301 - Val Loss: 0.3210 * - No Improve: 0
+Epoch 310/500 - Train Loss: 0.3270 - Val Loss: 0.3178 - No Improve: 2
+Epoch 320/500 - Train Loss: 0.3241 - Val Loss: 0.3148 * - No Improve: 0
+Epoch 330/500 - Train Loss: 0.3213 - Val Loss: 0.3120 - No Improve: 2
+Epoch 340/500 - Train Loss: 0.3186 - Val Loss: 0.3092 * - No Improve: 0
+Epoch 350/500 - Train Loss: 0.3160 - Val Loss: 0.3066 - No Improve: 2
+Epoch 360/500 - Train Loss: 0.3136 - Val Loss: 0.3041 - No Improve: 4
+Epoch 370/500 - Train Loss: 0.3112 - Val Loss: 0.3016 - No Improve: 4
+Epoch 380/500 - Train Loss: 0.3090 - Val Loss: 0.2993 - No Improve: 4
+Epoch 390/500 - Train Loss: 0.3068 - Val Loss: 0.2971 - No Improve: 4
+Epoch 400/500 - Train Loss: 0.3048 - Val Loss: 0.2949 - No Improve: 4
+Epoch 410/500 - Train Loss: 0.3028 - Val Loss: 0.2929 - No Improve: 4
+Epoch 420/500 - Train Loss: 0.3009 - Val Loss: 0.2909 - No Improve: 4
+
+======================================================================
+Early stopping triggered at epoch 421
+Best validation loss: 0.2916
+Restoring best weights from epoch 416
+======================================================================
+
+Karar sınırı grafikleri oluşturuluyor...
+Karar sınırı grafiği kaydedildi: ../results/graphs/train_decision_boundary.png
+Karar sınırı grafiği kaydedildi: ../results/graphs/val_decision_boundary.png
+
+======================================================================
+Training completed and model saved.
+Training stopped early at epoch 421/500
+======================================================================
+
+======================================================================
+        MODEL DEĞERLENDİRME BAŞLATILDI (2025-11-23 16:31:14)
+         
+======================================================================
+                         EĞİTİM PARAMETRELERİ                         
+======================================================================
+  Öğrenme Oranı (Learning Rate): 0.01
+  Maksimum Epoch: 500
+  Gerçekleşen Epoch: 421
+  Early Stopping: Aktif
+    - Patience: 5
+    - Min Delta: 0.001
+    - Durum: Tetiklendi (epoch 421'de durduruldu)
+  Eğitim Zamanı: 2025-11-23 16:30:35
+======================================================================
+
+
+Karar sınırı grafiği oluşturuluyor...
+Karar sınırı grafiği kaydedildi: ../results/graphs/test_decision_boundary.png
+======================================================================
+                  TEST SETİ DEĞERLENDİRME SONUÇLARI                   
+======================================================================
+  Kayıp (Loss): 0.2762
+  Doğruluk (Accuracy): 0.8500
+  Kesinlik (Precision): 1.0000
+  Duyarlılık (Recall): 0.8235
+  F1 Skoru: 0.9032
+======================================================================
+
+======================================================================
+                           CONFUSION MATRIX                           
+======================================================================
+
+                     |   Actual Positive    |   Actual Negative   
+                     |      (Class 1)       |      (Class 0)      
+----------------------------------------------------------------------
+  Predicted Positive |          14          |          0          
+           (Class 1) |   (True Positive)    |   (False Positive)  
+----------------------------------------------------------------------
+  Predicted Negative |          3           |          3          
+           (Class 0) |   (False Negative)   |   (True Negative)   
+----------------------------------------------------------------------
+
+                            ÖZET BİLGİLER:                            
+----------------------------------------------------------------------
+  Toplam Örnek                : 20
+  Gerçek Pozitif (Actual 1)   : 17
+  Gerçek Negatif (Actual 0)   : 3
+  Tahmin Pozitif (Predicted 1): 14
+  Tahmin Negatif (Predicted 0): 6
+======================================================================
