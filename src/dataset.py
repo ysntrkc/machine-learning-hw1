@@ -112,7 +112,7 @@ def prepare_and_save_data() -> None:
     raw_train_data, raw_val_data, raw_test_data = split_data(X_raw, y)
     save_splits("../data/raw", raw_train_data, raw_val_data, raw_test_data)
 
-    plot_scatter(X_raw, y, data="tüm")
+    plot_scatter(X_raw, y, data="whole")
     plot_scatter(raw_train_data[0], raw_train_data[1], data="train")
 
     # Özellikleri normalleştir

@@ -1,7 +1,6 @@
-Test Sonuçları - 2025-11-23 16:31:14
+Test Sonuçları - 2025-11-23 18:54:48
 Loss: 0.2762
 Accuracy: 0.8500
 Precision: 1.0000
 Recall: 0.8235
 F1_score: 0.9032
-

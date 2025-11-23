@@ -21,7 +21,7 @@ def ensure_dir_exists(directory: str) -> None:
 def plot_scatter(
     X: np.ndarray,
     y: np.ndarray,
-    data: str = "tüm",
+    data: str = "whole",
     save_path: str = "../results/graphs/",
 ) -> None:
     """
@@ -29,7 +29,7 @@ def plot_scatter(
     Args:
         X (np.ndarray): Özellik matrisi.
         y (np.ndarray): Hedef değişken vektörü.
-        data (str): Veri seti türü (örneğin, "train", "val", "test", "tüm").
+        data (str): Veri seti türü (örneğin, "train", "val", "test", "whole").
         save_path (str): Grafiğin kaydedileceği dosya yolu.
     """
     ensure_dir_exists(save_path)
@@ -60,7 +60,6 @@ def plot_scatter(
         marker="o",
     )
 
-    plt.title(f"{data.capitalize()} Veri Setinin Scatter Plotu")  # type: ignore
     plt.xlabel("Sınav 1")  # type: ignore
     plt.ylabel("Sınav 2")  # type: ignore
     plt.legend()  # type: ignore
@@ -138,7 +137,6 @@ def plot_decision_boundary(
             label="Karar Sınırı (Decision Boundary)",
         )
 
-    plt.title(f"{data.capitalize()} Veri Seti - Karar Sınırı ile", fontsize=14, fontweight="bold")  # type: ignore
     plt.xlabel("Sınav 1", fontsize=12)  # type: ignore
     plt.ylabel("Sınav 2", fontsize=12)  # type: ignore
     plt.legend(fontsize=11)  # type: ignore
@@ -171,7 +169,6 @@ def plot_loss_curve(
     plt.figure(figsize=(8, 6))  # type: ignore
     plt.plot(epochs, train_losses, label="Eğitim Kaybı", color="blue")  # type: ignore
     plt.plot(epochs, val_losses, label="Doğrulama Kaybı", color="orange")  # type: ignore
-    plt.title("Eğitim ve Doğrulama Kaybı")  # type: ignore
     plt.xlabel("Epoch")  # type: ignore
     plt.ylabel("Kayıp")  # type: ignore
     plt.legend()  # type: ignore

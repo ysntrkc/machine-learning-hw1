@@ -36,7 +36,7 @@ makine-ogrenmesi-hw1/
 │   │   ├── loss_curve.png           # Eğitim/doğrulama kayıp grafiği
 │   │   ├── test_decision_boundary.png # Test verisi karar sınırı grafiği
 │   │   ├── train_decision_boundary.png # Eğitim verisi karar sınırı grafiği
-│   │   ├── tüm_scatter_plot.png     # Tüm verinin scatter plot grafiği
+│   │   ├── whole_scatter_plot.png     # Tüm verinin scatter plot grafiği
 │   │   ├── train_scatter_plot.png   # Eğitim verisinin scatter plot grafiği
 │   │   └── val_decision_boundary.png   # Doğrulama verisi karar sınırı grafiği
 │   ├── logs/                        # Eğitim logları
@@ -437,7 +437,7 @@ Görselleştirme ve dosya yönetimi fonksiyonları.
 - Dizin yoksa oluşturur
 - `os.makedirs()` ile recursive oluşturma
 
-#### `plot_scatter(X, y, data='tüm', save_path='../results/graphs/')`
+#### `plot_scatter(X, y, data='whole', save_path='../results/graphs/')`
 - Veriyi 2D scatter plot olarak çizer
 - İki sınıfı farklı renklerle gösterir:
   - **Kalanlar (Class 0)**: Kırmızı 'x' - Sınavdan kalan adaylar
@@ -691,7 +691,7 @@ Model başarılı şekilde eğitilir ve şu metrikler hesaplanır:
 ### Çıktı Dosyaları
 
 1. **Scatter Plots** (`results/graphs/`)
-   - `tüm_scatter_plot.png`: Tüm veri setinin görselleştirmesi
+   - `whole_scatter_plot.png`: Tüm veri setinin görselleştirmesi
    - `train_scatter_plot.png`: Eğitim verisinin görselleştirmesi
    - Her sınıf farklı renk ve işaretle gösterilir
    - Eksenler: Sınav 1 ve Sınav 2 skorları
