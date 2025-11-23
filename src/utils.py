@@ -297,14 +297,14 @@ def parse_training_args():
     )
 
     parser.add_argument(
-        "-e", "--epochs", type=int, default=100, help="Eğitim için epoch sayısı"
+        "-e", "--epochs", type=int, default=500, help="Eğitim için epoch sayısı"
     )
 
     parser.add_argument(
         "-p",
         "--patience",
         type=int,
-        default=10,
+        default=5,
         help="Early stopping için patience (iyileşme olmadan beklenecek epoch sayısı)",
     )
 

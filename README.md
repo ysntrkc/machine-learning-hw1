@@ -4,13 +4,13 @@ Bu proje, **NumPy** kullanarak sıfırdan lojistik regresyon algoritmasını uyg
 
 ## 📋 İçindekiler
 
-- [Proje Yapısı](#proje-yapısı)
-- [Kurulum](#kurulum)
-- [Kullanım](#kullanım)
-- [Modüllerin Detaylı Açıklaması](#modüllerin-detaylı-açıklaması)
-- [Algoritma Detayları](#algoritma-detayları)
-- [Sonuçlar](#sonuçlar)
-- [Gereksinimler](#gereksinimler)
+[Proje Yapısı](#proje-yapısı)
+[Kurulum](#kurulum)
+[Kullanım](#kullanım)
+[Modüllerin Detaylı Açıklaması](#modüllerin-detaylı-açıklaması)
+[Algoritma Detayları](#algoritma-detayları)
+[Sonuçlar](#sonuçlar)
+[Notlar](#notlar)
 
 ## 🗂️ Proje Yapısı
 
@@ -34,8 +34,11 @@ makine-ogrenmesi-hw1/
 │   │   └── test_results.txt         # Test seti metrik sonuçları
 │   ├── graphs/                      # Grafikler
 │   │   ├── loss_curve.png           # Eğitim/doğrulama kayıp grafiği
+│   │   ├── test_decision_boundary.png # Test verisi karar sınırı grafiği
+│   │   ├── train_decision_boundary.png # Eğitim verisi karar sınırı grafiği
 │   │   ├── tüm_scatter_plot.png     # Tüm verinin scatter plot grafiği
-│   │   └── train_scatter_plot.png   # Eğitim verisinin scatter plot grafiği
+│   │   ├── train_scatter_plot.png   # Eğitim verisinin scatter plot grafiği
+│   │   └── val_decision_boundary.png   # Doğrulama verisi karar sınırı grafiği
 │   ├── logs/                        # Eğitim logları
 │   │   └── training.log             # Epoch bazlı eğitim logları
 │   └── model/                       # Eğitilmiş model ağırlıkları
@@ -67,7 +70,7 @@ makine-ogrenmesi-hw1/
 
 1. Repoyu klonlayın veya indirin:
 ```bash
-git clone <repository-url>
+git clone https://github.com/ysntrkc/machine-learning-hw1.git
 cd makine-ogrenmesi-hw1
 ```
 
@@ -101,9 +104,9 @@ python train.py [-lr LEARNING_RATE] [-e EPOCHS] [-p PATIENCE] [-d MIN_DELTA] [--
 ```
 
 - `-lr, --learning_rate`: Öğrenme oranı (varsayılan: 0.01)
-- `-e, --epochs`: Maksimum epoch sayısı (varsayılan: 100)
-- `-p, --patience`: Early stopping patience - iyileşme olmadan beklenecek epoch sayısı (varsayılan: 10)
-- `-d, --min_delta`: Early stopping minimum delta - iyileşme olarak kabul edilecek minimum değişim (varsayılan: 0.0001)
+- `-e, --epochs`: Maksimum epoch sayısı (varsayılan: 500)
+- `-p, --patience`: Early stopping patience - iyileşme olmadan beklenecek epoch sayısı (varsayılan: 5)
+- `-d, --min_delta`: Early stopping minimum delta - iyileşme olarak kabul edilecek minimum değişim (varsayılan: 0.001)
 - `--no_early_stopping`: Early stopping'i devre dışı bırak
 - `-l, --log`: Log modu (varsayılan: both)
   - `both`: Konsol ve dosyaya loglama
@@ -206,16 +209,14 @@ python dataset.py
 
 Bu modül, veri yükleme, normalizasyon ve bölme işlemlerini gerçekleştirir.
 
-**Import:** `from utils import plot_scatter`
-
 #### Fonksiyonlar:
 
-**`load_data(path: str)`** (import: `from utils import plot_scatter`)
-- Ham veriyi CSV formatında yükler
+**`load_data(path)`**
+- Ham veriyi TXT dosyasından ',' ile ayırır ve numPy dizisi olarak yükler
 - İlk iki sütun özellikler (features), üçüncü sütun etiket (label)
 - 101 örnek, 2 özellik, ikili sınıflandırma (0/1)
 
-**`normalize_features(X: np.ndarray)`**
+**`normalize_features(X)`**
 - Min-Max normalizasyonu uygular: `(X - min) / (max - min)`
 - Her özelliği [0, 1] aralığına ölçekler
 - Bölme hatasını önlemek için özel kontrol içerir
@@ -240,18 +241,18 @@ Bu modül, veri yükleme, normalizasyon ve bölme işlemlerini gerçekleştirir.
 
 ### 2. `model.py` - Lojistik Regresyon Modeli
 
-Lojistik regresyon algoritmasının çekirdek implementasyonu.
+Lojistik regresyon algoritmasının implementasyonu.
 
 #### Fonksiyonlar:
 
-**`sigmoid(z: np.ndarray)`**
+**`sigmoid(z)`**
 ```python
 σ(z) = 1 / (1 + e^(-z))
 ```
 - Aktivasyon fonksiyonu
 - [-∞, +∞] aralığını [0, 1] olasılık aralığına dönüştürür
 
-**`predict_probabilities(X: np.ndarray, w: np.ndarray)`**
+**`predict_probabilities(X, w)`**
 ```python
 p = σ(X · w)
 ```
@@ -280,7 +281,7 @@ w_new = w - η · ∇L
 - Ağırlıkları gradyan descent ile günceller
 - η (eta): öğrenme oranı
 
-**`initialize_weights(n_features: int)`**
+**`initialize_weights(n_features)`**
 - Ağırlıkları [-0.01, 0.01] aralığında rastgele başlatır
 - Küçük değerler ile başlamak eğitim stabilitesini artırır
 
@@ -299,7 +300,10 @@ Lojistik regresyon modelini Stochastic Gradient Descent (SGD) ile eğitir.
 
 **Parametreler:**
 - `learning_rate=0.01`: Öğrenme oranı
-- `n_epochs=100`: Epoch sayısı
+- `n_epochs=500`: Epoch sayısı
+- `patience=5`: Early stopping patience - iyileşme olmadan beklenecek epoch sayısı
+- `min_delta=0.001`: Early stopping için minimum iyileşme
+- `early_stopping=True`: Early stopping'i etkinleştirir/devre dışı bırakır
 
 **SGD Algoritması:**
 ```
@@ -309,8 +313,10 @@ Her epoch için:
         2. Loss hesapla
         3. Gradyan hesapla
         4. Ağırlıkları güncelle
-    Epoch sonu: ortalama train loss hesapla
-    Tüm val seti ile val loss hesapla
+    Epoch sonu:
+        1. Ortalama train loss hesapla
+        2. Tüm val seti ile val loss hesapla
+        3. Early stopping kontrolü yap
 ```
 
 **Özellikler:**
@@ -334,7 +340,7 @@ Eğitilmiş modeli test verisinde değerlendirir.
 
 **Değerlendirme Adımları:**
 1. Olasılık tahminleri yap
-2. Threshold=0.5 ile binary predictions elde et
+2. Threshold=0.5 ile ikili sınıf tahmini yap
 3. Tüm metrikleri hesapla
 
 **Dönen Metrikler:**
@@ -351,10 +357,10 @@ Sınıflandırma performans metriklerini hesaplar.
 #### Confusion Matrix
 
 ```
-                Predicted
-               0       1
-Actual  0    TN      FP
-        1    FN      TP
+            Gerçek Değer
+             1       0
+Tahmin  1    TP      FN
+Edilen  0    FP      TN
 ```
 
 **`confusion_matrix(y_true, y_pred)`**
@@ -434,8 +440,8 @@ Görselleştirme ve dosya yönetimi fonksiyonları.
 #### `plot_scatter(X, y, data='tüm', save_path='../results/graphs/')`
 - Veriyi 2D scatter plot olarak çizer
 - İki sınıfı farklı renklerle gösterir:
-  - **Kalanlar (Class 0)**: Kırmızı 'x' - Sınavdan kalan öğrenciler
-  - **Geçenler (Class 1)**: Mavi 'o' - Sınavdan geçen öğrenciler
+  - **Kalanlar (Class 0)**: Kırmızı 'x' - Sınavdan kalan adaylar
+  - **Geçenler (Class 1)**: Mavi 'o' - Sınavdan geçen adaylar
 - Eksen etiketleri: "Sınav 1" ve "Sınav 2"
 - Bias sütununu otomatik atlar
 - Grafik dosya adı: `{data}_scatter_plot.png`
@@ -448,7 +454,7 @@ Görselleştirme ve dosya yönetimi fonksiyonları.
 - Grafik dosya adı: `loss_curve.png`
 - Varsayılan kayıt yolu: `../results/graphs/`
 
-#### `plot_decision_boundary(X_normalized, y, weights, X_raw, data='test', save_path='../results/graphs/')` **✨ YENİ**
+#### `plot_decision_boundary(X_normalized, y, weights, X_raw, data='test', save_path='../results/graphs/')`
 - Veri noktalarını ve lojistik regresyon karar sınırını birlikte çizer
 - **Orijinal (normalize edilmemiş) değerleri kullanır** - daha anlaşılır görselleştirme
 - **Karar Sınırı Hesaplama:**
@@ -620,12 +626,6 @@ w := w - η · (h(x^(i)) - y^(i)) · x^(i)
 Bu implementasyon **true SGD** kullanır:
 - Her örnekte ağırlık güncellenir
 - Mini-batch veya batch GD değil
-- Avantajlar ve dezavantajlar:
-  - ✅ Hızlı güncelleme
-  - ✅ Memory efficient
-  - ✅ Lokal minimumlardan kaçınabilir
-  - ⚠️ Daha gürültülü öğrenme
-  - ⚠️ Daha fazla iterasyon gerekebilir
 
 ### Early Stopping
 
@@ -649,12 +649,6 @@ Her epoch sonunda:
         Eğitimi durdur
         best_weights'i geri yükle
 ```
-
-#### Avantajlar:
-- ✅ Overfitting'i otomatik olarak önler
-- ✅ Eğitim süresini optimize eder
-- ✅ En iyi modeli otomatik olarak saklar
-- ✅ Manuel epoch sayısı ayarlama gereğini azaltır
 
 #### Log Çıktısı:
 ```
@@ -702,7 +696,7 @@ Model başarılı şekilde eğitilir ve şu metrikler hesaplanır:
    - Her sınıf farklı renk ve işaretle gösterilir
    - Eksenler: Sınav 1 ve Sınav 2 skorları
 
-2. **Decision Boundary Plots** (`results/graphs/`) **✨ YENİ**
+2. **Decision Boundary Plots** (`results/graphs/`)
    - `train_decision_boundary.png`: Eğitim verisi üzerinde karar sınırı
    - `val_decision_boundary.png`: Doğrulama verisi üzerinde karar sınırı
    - `test_decision_boundary.png`: Test verisi üzerinde karar sınırı
@@ -739,70 +733,24 @@ Model başarılı şekilde eğitilir ve şu metrikler hesaplanır:
    - Test sonuçları yazdırılırken otomatik olarak gösterilir
    - Latest versiyon her eğitimde güncellenir
 
-## 🔧 Gereksinimler
-
-```
-numpy>=1.19.0
-matplotlib>=3.3.0
-```
-
-### Kurulum:
-```bash
-pip install numpy matplotlib
-```
-
 ## 📝 Notlar
 
 ### Veri Seti Özellikleri
 - **Toplam örnek**: 101
 - **Özellik sayısı**: 2 (Sınav 1 ve Sınav 2 skorları)
 - **Sınıf sayısı**: 2 (binary classification)
-  - **Class 0**: Kalanlar (sınavdan geçemeyen öğrenciler)
-  - **Class 1**: Geçenler (sınavdan geçen öğrenciler)
+  - **Class 0**: Kalanlar (sınavdan geçemeyen adaylar)
+  - **Class 1**: Geçenler (sınavdan geçen adaylar)
 - **Format**: CSV (virgülle ayrılmış)
 - **Split**: 60-20-20 (train-val-test)
 - **Dosya yolları**: Göreli yollar kullanılır (`../data/`, `../results/`)
 
 ### Hiperparametreler
 - **Learning Rate**: 0.01 (özelleştirilebilir: `-lr` flag)
-- **Max Epochs**: 100 (özelleştirilebilir: `-e` flag)
+- **Max Epochs**: 500 (özelleştirilebilir: `-e` flag)
 - **Early Stopping**: Aktif (devre dışı bırakılabilir: `--no_early_stopping` flag)
-  - **Patience**: 10 (özelleştirilebilir: `-p` flag)
-  - **Min Delta**: 0.0001 (özelleştirilebilir: `-d` flag)
+  - **Patience**: 5 (özelleştirilebilir: `-p` flag)
+  - **Min Delta**: 0.001 (özelleştirilebilir: `-d` flag)
 - **Weight Initialization**: Uniform(-0.01, 0.01)
 - **Threshold**: 0.5 (classification)
 - **Epsilon**: 1e-15 (numerical stability)
-
-### Kod Kalitesi
-- Type hints kullanılmış (Python 3.7+)
-- Detaylı docstring'ler
-- Modüler yapı
-- Error handling:
-  - Division by zero (metrics.py)
-  - Log(0) prevention (model.py)
-  - File not found (train.py)
-- Tutarlı isimlendirme
-- Göreli dosya yolları (taşınabilir kod)
-- Otomatik dizin oluşturma
-
-## 🤝 Katkıda Bulunma
-
-Bu proje bir ödev projesidir. Geliştirmeler için:
-1. Farklı optimizasyon algoritmaları (Adam, RMSprop)
-2. Regularization (L1, L2)
-3. Feature engineering
-4. Hiperparametre optimizasyonu
-5. Cross-validation
-6. ~~Early stopping~~ ✅ (Eklendi!)
-7. ~~Decision boundary visualization~~ ✅ (Eklendi!)
-
-## 📄 Lisans
-
-Bu proje eğitim amaçlıdır.
-
----
-
-**Son Güncelleme**: Kasım 2025  
-**Python Version**: 3.7+  
-**NumPy Version**: 1.19+  
-**Yeni Özellikler**: Early Stopping, Training Parameter Tracking, Decision Boundary Visualization

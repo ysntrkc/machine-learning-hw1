@@ -3,8 +3,8 @@ from typing import Dict, Tuple
 
 import numpy as np
 import argparse
-import logger
 
+from logger import setup_logger, log
 from model import predict_probabilities, cross_entropy_loss
 from metrics import accuracy, precision, recall, f1_score, confusion_matrix
 from utils import (
@@ -12,7 +12,6 @@ from utils import (
     print_confusion_matrix,
     load_training_params,
     plot_decision_boundary,
-    log,
 )
 
 
@@ -98,7 +97,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logger.setup_logger(mode=args.log)
+    setup_logger(mode=args.log)
 
     log("\n" + "=" * 70)
     log(

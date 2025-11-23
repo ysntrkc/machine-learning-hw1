@@ -6,7 +6,6 @@ Provides unified logging to console and/or file.
 from typing import Literal
 import os
 import sys
-from datetime import datetime
 
 
 # Global logger instance
@@ -67,7 +66,7 @@ class Logger:
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self):
         """Context manager exit."""
         self.close()
 

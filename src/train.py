@@ -1,11 +1,11 @@
 from typing import Tuple
 
 import os
-import logger
 import numpy as np
 
 from datetime import datetime
 
+from logger import setup_logger, log
 from dataset import prepare_and_save_data
 from model import (
     caclulate_gradient,
@@ -21,7 +21,6 @@ from utils import (
     print_training_config,
     save_training_params,
     plot_decision_boundary,
-    log,
 )
 
 
@@ -97,9 +96,9 @@ def train_logistic_regression(
     X_val: np.ndarray,
     y_val: np.ndarray,
     learning_rate: float = 0.01,
-    n_epochs: int = 100,
-    patience: int = 10,
-    min_delta: float = 0.0001,
+    n_epochs: int = 500,
+    patience: int = 5,
+    min_delta: float = 0.001,
     early_stopping: bool = True,
 ) -> Tuple[np.ndarray, list[float], list[float], int, bool]:
     """
@@ -271,7 +270,7 @@ def train(
 if __name__ == "__main__":
     args = parse_training_args()
 
-    logger.setup_logger(mode=args.log)
+    setup_logger(mode=args.log)
 
     train(
         learning_rate=args.learning_rate,
