@@ -1,7 +1,10 @@
 from typing import Tuple
 
 import os
+import logger
 import numpy as np
+
+from datetime import datetime
 
 from dataset import prepare_and_save_data
 from model import (
@@ -16,8 +19,8 @@ from utils import (
     save_weights,
     parse_training_args,
     print_training_config,
+    save_training_params,
     log,
-    setup_logger,
 )
 
 
@@ -78,7 +81,10 @@ def train_logistic_regression(
     y_val: np.ndarray,
     learning_rate: float = 0.01,
     n_epochs: int = 100,
-) -> Tuple[np.ndarray, list[float], list[float]]:
+    patience: int = 10,
+    min_delta: float = 0.0001,
+    early_stopping: bool = True,
+) -> Tuple[np.ndarray, list[float], list[float], int, bool]:
     """
     Lojistik regresyon modelini Stochastic Gradient Descent (SGD) ile eğitir.
     Args:
@@ -88,17 +94,29 @@ def train_logistic_regression(
         y_val (np.ndarray): Doğrulama etiketleri.
         learning_rate (float): Öğrenme oranı.
         n_epochs (int): Eğitim için epoch sayısı.
+        patience (int): Early stopping yapmadan önceki minimum epoch sayısı.
+        min_delta (float): Early stopping için minimum iyileşme.
+        early_stopping (bool): Early stopping kullanılsın mı.
     Returns:
         w (np.ndarray): Eğitilmiş ağırlıklar.
         train_losses (list[float]): Eğitim kayıplarının listesi.
         val_losses (list[float]): Doğrulama kayıplarının listesi.
+        actual_epochs (int): Gerçekleşen epoch sayısı.
+        early_stopped (bool): Early stopping tetiklendi mi.
     """
     w = initialize_weights(n_features=X_train.shape[1])
 
     train_losses: list[float] = []
     val_losses: list[float] = []
 
-    log(f"\n{15*'='} Starting Training {'='*16}")
+    best_val_loss = float("inf")
+    best_weights = None
+    epochs_no_improve = 0
+    early_stopped = False
+
+    log("=" * 70)
+    log(f"Starting training for {n_epochs} epochs with learning rate {learning_rate}")
+    log("=" * 70)
     for epoch in range(n_epochs):
         epoch_train_losses: list[float] = []
 
@@ -121,22 +139,65 @@ def train_logistic_regression(
         val_loss = cross_entropy_loss(y_val, y_val_pred)
         val_losses.append(val_loss)
 
-        if (epoch + 1) % 10 == 0 or epoch == 0:
-            log(
-                f"Epoch {epoch+1:>{len(str(n_epochs))}d}/{n_epochs} - Train Loss: {avg_train_loss:.4f} - Val Loss: {val_loss:.4f}"
-            )
+        if early_stopping:
+            if val_loss < best_val_loss - min_delta:
+                best_val_loss = val_loss
+                best_weights = w.copy()
+                epochs_no_improve = 0
+                improvement_marker = " *"
+            else:
+                epochs_no_improve += 1
+                improvement_marker = ""
 
-    return w, train_losses, val_losses
+            if (epoch + 1) % 10 == 0 or epoch == 0:
+                log(
+                    f"Epoch {epoch+1:>{len(str(n_epochs))}d}/{n_epochs} - Train Loss: {avg_train_loss:.4f} - Val Loss: {val_loss:.4f}{improvement_marker} - No Improve: {epochs_no_improve}"
+                )
+
+            if epochs_no_improve >= patience:
+                log(f"\n{'='*70}")
+                log(f"Early stopping triggered at epoch {epoch + 1}")
+                log(f"Best validation loss: {best_val_loss:.4f}")
+                log(f"Restoring best weights from epoch {epoch + 1 - patience}")
+                log(f"{'='*70}")
+                w = np.array(best_weights)
+                early_stopped = True
+                actual_epochs = epoch + 1
+                return w, train_losses, val_losses, actual_epochs, early_stopped
+        else:
+            if (epoch + 1) % 10 == 0 or epoch == 0:
+                log(
+                    f"Epoch {epoch+1:>{len(str(n_epochs))}d}/{n_epochs} - Train Loss: {avg_train_loss:.4f} - Val Loss: {val_loss:.4f}"
+                )
+
+    actual_epochs = n_epochs
+    return w, train_losses, val_losses, actual_epochs, early_stopped
 
 
-def train(learning_rate: float = 0.01, n_epochs: int = 100) -> None:
+def train(
+    learning_rate: float = 0.01,
+    n_epochs: int = 100,
+    patience: int = 10,
+    min_delta: float = 0.0001,
+    early_stopping: bool = True,
+) -> None:
     """
     Veri setini yükler, işler ve lojistik regresyon modelini eğitir.
     Args:
         learning_rate (float): Öğrenme oranı (varsayılan: 0.01).
         n_epochs (int): Epoch sayısı (varsayılan: 100).
+        patience (int): Early stopping patience.
+        min_delta (float): Early stopping minimum delta.
+        early_stopping (bool): Early stopping kullanılsın mı.
     """
-    print_training_config(learning_rate, n_epochs)
+
+    log("\n" + "=" * 70)
+    log(
+        f"MODEL EĞİTİMİ BAŞLATILDI ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n".center(
+            70
+        )
+    )
+    print_training_config(learning_rate, n_epochs, patience, min_delta, early_stopping)
 
     prepare_and_save_data()
 
@@ -145,22 +206,51 @@ def train(learning_rate: float = 0.01, n_epochs: int = 100) -> None:
     X_train = add_bias_term(X_train)
     X_val = add_bias_term(X_val)
 
-    w, train_losses, val_losses = train_logistic_regression(
-        X_train, y_train, X_val, y_val, learning_rate=learning_rate, n_epochs=n_epochs
+    w, train_losses, val_losses, actual_epochs, early_stopped = (
+        train_logistic_regression(
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+            learning_rate=learning_rate,
+            n_epochs=n_epochs,
+            patience=patience,
+            min_delta=min_delta,
+            early_stopping=early_stopping,
+        )
     )
 
     plot_loss_curve(train_losses, val_losses)
     save_weights(w)
+    save_training_params(
+        learning_rate=learning_rate,
+        n_epochs=n_epochs,
+        actual_epochs=actual_epochs,
+        patience=patience,
+        min_delta=min_delta,
+        early_stopping_enabled=early_stopping,
+        early_stopped=early_stopped,
+    )
 
-    log("\n" + "=" * 50)
+    log("\n" + "=" * 70)
     log("Training completed and model saved.")
-    log("=" * 50)
+    if early_stopped:
+        log(f"Training stopped early at epoch {actual_epochs}/{n_epochs}")
+    else:
+        log(f"Training completed all {actual_epochs} epochs")
+    log("=" * 70)
 
 
 if __name__ == "__main__":
     args = parse_training_args()
 
     # Setup logger with mode from command line arguments
-    setup_logger(mode=args.log)
+    logger.setup_logger(mode=args.log)
 
-    train(learning_rate=args.learning_rate, n_epochs=args.epochs)
+    train(
+        learning_rate=args.learning_rate,
+        n_epochs=args.epochs,
+        patience=args.patience,
+        min_delta=args.min_delta,
+        early_stopping=not args.no_early_stopping,
+    )

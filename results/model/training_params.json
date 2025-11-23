@@ -1,0 +1,10 @@
+{
+  "learning_rate": 0.01,
+  "max_epochs": 500,
+  "actual_epochs": 421,
+  "early_stopping_enabled": true,
+  "early_stopped": true,
+  "timestamp": "2025-11-23 15:57:47",
+  "patience": 5,
+  "min_delta": 0.001
+}

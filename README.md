@@ -97,11 +97,14 @@ python train.py
 **Komut Satırı Argümanları:**
 
 ```bash
-python train.py [-lr LEARNING_RATE] [-e EPOCHS] [-l LOG_MODE]
+python train.py [-lr LEARNING_RATE] [-e EPOCHS] [-p PATIENCE] [-d MIN_DELTA] [--no_early_stopping] [-l LOG_MODE]
 ```
 
 - `-lr, --learning_rate`: Öğrenme oranı (varsayılan: 0.01)
-- `-e, --epochs`: Epoch sayısı (varsayılan: 100)
+- `-e, --epochs`: Maksimum epoch sayısı (varsayılan: 100)
+- `-p, --patience`: Early stopping patience - iyileşme olmadan beklenecek epoch sayısı (varsayılan: 10)
+- `-d, --min_delta`: Early stopping minimum delta - iyileşme olarak kabul edilecek minimum değişim (varsayılan: 0.0001)
+- `--no_early_stopping`: Early stopping'i devre dışı bırak
 - `-l, --log`: Log modu (varsayılan: both)
   - `both`: Konsol ve dosyaya loglama
   - `console`: Sadece konsola loglama
@@ -110,17 +113,23 @@ python train.py [-lr LEARNING_RATE] [-e EPOCHS] [-l LOG_MODE]
 **Örnek Kullanım:**
 
 ```bash
-# Varsayılan parametrelerle eğitim
+# Varsayılan parametrelerle eğitim (early stopping aktif)
 python train.py
 
 # Özel learning rate ve epoch sayısı
 python train.py -lr 0.001 -e 200
 
+# Early stopping parametrelerini özelleştirme
+python train.py -p 15 -d 0.0005
+
+# Early stopping'i devre dışı bırakma
+python train.py --no_early_stopping
+
 # Sadece konsola loglama
 python train.py -l console
 
 # Tüm parametrelerle
-python train.py -lr 0.005 -e 150 -l file
+python train.py -lr 0.005 -e 150 -p 20 -d 0.0001 -l file
 ```
 
 Bu komut:
@@ -128,11 +137,17 @@ Bu komut:
 - Train/val/test setlerine ayırır (%60/%20/%20)
 - Scatter plot grafikleri oluşturur (tüm veri ve eğitim verisi)
 - Belirtilen epoch sayısı boyunca SGD ile modeli eğitir
+- **Early stopping** ile eğitimi izler:
+  - Validation loss izlenir
+  - Belirlenen patience süresi boyunca iyileşme olmazsa eğitim durdurulur
+  - En iyi validation loss'a sahip model ağırlıkları saklanır
+  - Early stopping tetiklendiğinde en iyi ağırlıklar geri yüklenir
 - Eğitim ilerlemesini konsola ve/veya dosyaya loglar
 - Kayıp grafiğini oluşturur (`results/graphs/loss_curve.png`)
 - Model ağırlıklarını iki versiyonda kaydeder:
   - Timestamp'li versiyon: `model_weights_YYYYMMDD_HHMMSS.npy`
   - Son model: `model_weights_latest.npy`
+- Eğitim parametrelerini kaydeder (`results/model/training_params.json`)
 
 ### 2. Model Değerlendirme
 
@@ -167,6 +182,7 @@ python eval.py -l file
 ```
 
 Bu komut şu metrikleri yazdırır:
+- **Eğitim Parametreleri**: Modelin eğitildiği parametreler (learning rate, epochs, early stopping bilgileri)
 - **Loss (Kayıp)**: Cross-entropy loss
 - **Accuracy (Doğruluk)**: Genel doğru tahmin oranı
 - **Precision (Kesinlik)**: Pozitif tahminlerin doğruluk oranı
@@ -442,14 +458,40 @@ Görselleştirme ve dosya yönetimi fonksiyonları.
 - Komut satırı argümanlarını parse eder
 - Desteklenen argümanlar:
   - `-lr, --learning_rate`: Öğrenme oranı (float, varsayılan: 0.01)
-  - `-e, --epochs`: Epoch sayısı (int, varsayılan: 100)
+  - `-e, --epochs`: Maksimum epoch sayısı (int, varsayılan: 100)
+  - `-p, --patience`: Early stopping patience (int, varsayılan: 10)
+  - `-d, --min_delta`: Early stopping minimum delta (float, varsayılan: 0.0001)
+  - `--no_early_stopping`: Early stopping'i devre dışı bırak (flag)
   - `-l, --log`: Log modu (str, varsayılan: "both")
 - `argparse.Namespace` objesi döndürür
 
-#### `print_training_config(learning_rate, n_epochs)`
+#### `print_training_config(learning_rate, n_epochs, patience, min_delta, early_stopping_enabled)`
 - Eğitim konfigürasyonunu formatlı şekilde ekrana yazdırır
-- Learning rate ve epoch sayısını gösterir
+- Gösterilen bilgiler:
+  - Learning rate
+  - Epoch sayısı
+  - Early stopping durumu (aktif/devre dışı)
+  - Early stopping parametreleri (patience, min_delta)
 - Eğitim başlamadan önce çağrılır
+
+#### `save_training_params(learning_rate, n_epochs, actual_epochs, patience, min_delta, early_stopping_enabled, early_stopped, save_file='../results/model/training_params.json')`
+- Eğitim parametrelerini JSON formatında kaydeder
+- Kaydedilen bilgiler:
+  - `learning_rate`: Öğrenme oranı
+  - `max_epochs`: Maksimum epoch sayısı
+  - `actual_epochs`: Gerçekleşen epoch sayısı
+  - `early_stopping_enabled`: Early stopping kullanıldı mı
+  - `early_stopped`: Early stopping tetiklendi mi
+  - `patience`: Early stopping patience
+  - `min_delta`: Early stopping minimum delta
+  - `timestamp`: Eğitim tarihi ve saati
+- Evaluation sırasında bu parametreler otomatik olarak gösterilir
+
+#### `load_training_params(load_file='../results/model/training_params.json')`
+- Kaydedilmiş eğitim parametrelerini yükler
+- JSON dosyasını okur ve dictionary döndürür
+- Dosya yoksa `None` döndürür
+- `eval.py` tarafından test sonuçlarını gösterirken kullanılır
 
 #### `print_confusion_matrix(conf_matrix)`
 - Confusion matrix'i tablo formatında görselleştirir
@@ -553,12 +595,55 @@ w := w - η · (h(x^(i)) - y^(i)) · x^(i)
 Bu implementasyon **true SGD** kullanır:
 - Her örnekte ağırlık güncellenir
 - Mini-batch veya batch GD değil
--장단점:
+- Avantajlar ve dezavantajlar:
   - ✅ Hızlı güncelleme
   - ✅ Memory efficient
   - ✅ Lokal minimumlardan kaçınabilir
   - ⚠️ Daha gürültülü öğrenme
   - ⚠️ Daha fazla iterasyon gerekebilir
+
+### Early Stopping
+
+**Overfitting'i önlemek** için validation loss bazlı early stopping kullanılır:
+
+#### Parametreler:
+- **patience**: İyileşme olmadan beklenecek epoch sayısı (varsayılan: 10)
+- **min_delta**: İyileşme olarak kabul edilecek minimum değişim (varsayılan: 0.0001)
+
+#### Algoritma:
+```
+Her epoch sonunda:
+    Eğer (val_loss < best_val_loss - min_delta):
+        best_val_loss = val_loss
+        best_weights = current_weights
+        epochs_no_improve = 0
+    Değilse:
+        epochs_no_improve += 1
+    
+    Eğer (epochs_no_improve >= patience):
+        Eğitimi durdur
+        best_weights'i geri yükle
+```
+
+#### Avantajlar:
+- ✅ Overfitting'i otomatik olarak önler
+- ✅ Eğitim süresini optimize eder
+- ✅ En iyi modeli otomatik olarak saklar
+- ✅ Manuel epoch sayısı ayarlama gereğini azaltır
+
+#### Log Çıktısı:
+```
+Epoch  50/100 - Train Loss: 0.3245 - Val Loss: 0.3412 * - No Improve: 0
+Epoch  60/100 - Train Loss: 0.3201 - Val Loss: 0.3445   - No Improve: 10
+
+==================================================
+Early stopping triggered at epoch 60
+Best validation loss: 0.3412
+Restoring best weights from epoch 50
+==================================================
+```
+
+**Not:** `*` işareti validation loss'ta iyileşme olduğunu gösterir.
 
 ### Normalizasyon
 
@@ -604,6 +689,20 @@ Model başarılı şekilde eğitilir ve şu metrikler hesaplanır:
    - Timestamp'li versiyon her çalıştırmada yeni dosya oluşturur
    - Latest versiyon her eğitimde güncellenir
 
+4. **Training Parameters** (`results/model/training_params.json`)
+   - Eğitim parametrelerini JSON formatında saklar
+   - İçerik:
+     - `learning_rate`: Öğrenme oranı
+     - `max_epochs`: Maksimum epoch sayısı
+     - `actual_epochs`: Gerçekleşen epoch sayısı
+     - `early_stopping_enabled`: Early stopping kullanıldı mı
+     - `early_stopped`: Early stopping tetiklendi mi
+     - `patience`: Early stopping patience değeri
+     - `min_delta`: Early stopping minimum delta değeri
+     - `timestamp`: Eğitim zamanı
+   - Test sonuçları yazdırılırken otomatik olarak gösterilir
+   - Latest versiyon her eğitimde güncellenir
+
 ## 🔧 Gereksinimler
 
 ```
@@ -629,8 +728,11 @@ pip install numpy matplotlib
 - **Dosya yolları**: Göreli yollar kullanılır (`../data/`, `../results/`)
 
 ### Hiperparametreler
-- **Learning Rate**: 0.01
-- **Epochs**: 100
+- **Learning Rate**: 0.01 (özelleştirilebilir: `-lr` flag)
+- **Max Epochs**: 100 (özelleştirilebilir: `-e` flag)
+- **Early Stopping**: Aktif (devre dışı bırakılabilir: `--no_early_stopping` flag)
+  - **Patience**: 10 (özelleştirilebilir: `-p` flag)
+  - **Min Delta**: 0.0001 (özelleştirilebilir: `-d` flag)
 - **Weight Initialization**: Uniform(-0.01, 0.01)
 - **Threshold**: 0.5 (classification)
 - **Epsilon**: 1e-15 (numerical stability)
@@ -655,6 +757,7 @@ Bu proje bir ödev projesidir. Geliştirmeler için:
 3. Feature engineering
 4. Hiperparametre optimizasyonu
 5. Cross-validation
+6. ~~Early stopping~~ ✅ (Eklendi!)
 
 ## 📄 Lisans
 
@@ -664,4 +767,5 @@ Bu proje eğitim amaçlıdır.
 
 **Son Güncelleme**: Kasım 2025  
 **Python Version**: 3.7+  
-**NumPy Version**: 1.19+
+**NumPy Version**: 1.19+  
+**Yeni Özellikler**: Early Stopping, Training Parameter Tracking

@@ -1,10 +1,11 @@
-from typing import Tuple
-import matplotlib.pyplot as plt
-import numpy as np
-import os
+from typing import Any, Optional, Tuple, Dict
 
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+from logger import log
 from datetime import datetime
-from logger import log, setup_logger, get_logger
 
 
 def ensure_dir_exists(directory: str) -> None:
@@ -113,6 +114,66 @@ def save_weights(w: np.ndarray, save_dir: str = "../results/model/") -> None:
     np.save(os.path.join(save_dir, "model_weights_latest.npy"), w)
 
 
+def save_training_params(
+    learning_rate: float,
+    n_epochs: int,
+    actual_epochs: int,
+    patience: Optional[int] = None,
+    min_delta: Optional[float] = None,
+    early_stopping_enabled: bool = True,
+    early_stopped: bool = False,
+    save_file: str = "../results/model/training_params.json",
+) -> None:
+    """
+    Eğitim parametrelerini JSON dosyasına kaydeder.
+    Args:
+        learning_rate (float): Öğrenme oranı.
+        n_epochs (int): Maksimum epoch sayısı.
+        actual_epochs (int): Gerçekleşen epoch sayısı.
+        patience (int): Early stopping patience.
+        min_delta (float): Early stopping minimum delta.
+        early_stopping_enabled (bool): Early stopping aktif miydi.
+        early_stopped (bool): Early stopping tetiklendi mi.
+        save_file (str): Parametrelerin kaydedileceği dosya yolu.
+    """
+    import json
+
+    ensure_dir_exists(os.path.dirname(save_file))
+    params: Dict[str, Any] = {
+        "learning_rate": learning_rate,
+        "max_epochs": n_epochs,
+        "actual_epochs": actual_epochs,
+        "early_stopping_enabled": early_stopping_enabled,
+        "early_stopped": early_stopped,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    if early_stopping_enabled:
+        params["patience"] = patience
+        params["min_delta"] = min_delta
+
+    with open(save_file, "w", encoding="utf-8") as f:
+        json.dump(params, f, indent=2, ensure_ascii=False)
+
+
+def load_training_params(
+    load_file: str = "../results/model/training_params.json",
+) -> Optional[Dict[str, Any]]:
+    """
+    Eğitim parametrelerini JSON dosyasından yükler.
+    Args:
+        load_file (str): Parametrelerin yükleneceği dosya yolu.
+    Returns:
+        dict: Eğitim parametreleri.
+    """
+    import json
+
+    if not os.path.exists(load_file):
+        return None
+
+    with open(load_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def log_test_results(
     results: dict[str, float],
     log_file: str = "../results/evaluation/test_results.txt",
@@ -158,6 +219,28 @@ def parse_training_args():
     )
 
     parser.add_argument(
+        "-p",
+        "--patience",
+        type=int,
+        default=10,
+        help="Early stopping için patience (iyileşme olmadan beklenecek epoch sayısı)",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--min_delta",
+        type=float,
+        default=0.001,
+        help="Early stopping için minimum iyileşme miktarı",
+    )
+
+    parser.add_argument(
+        "--no_early_stopping",
+        action="store_true",
+        help="Early stopping'i devre dışı bırak",
+    )
+
+    parser.add_argument(
         "-l",
         "--log",
         type=str,
@@ -170,23 +253,40 @@ def parse_training_args():
     return args
 
 
-def print_training_config(learning_rate: float, n_epochs: int) -> None:
+def print_training_config(
+    learning_rate: float,
+    n_epochs: int,
+    patience: Optional[int] = None,
+    min_delta: Optional[float] = None,
+    early_stopping_enabled: bool = True,
+) -> None:
     """
     Eğitim konfigürasyonunu ekrana yazdırır.
     Args:
         learning_rate (float): Öğrenme oranı.
         n_epochs (int): Epoch sayısı.
+        patience (int): Early stopping patience.
+        min_delta (float): Early stopping minimum delta.
+        early_stopping_enabled (bool): Early stopping aktif mi.
     """
     log("=" * 50)
     log("EĞITIM KONFIGÜRASYONU")
     log("=" * 50)
     log(f"Learning Rate: {learning_rate}")
     log(f"Epoch Sayısı: {n_epochs}")
+    if early_stopping_enabled and patience is not None:
+        log("Early Stopping: Aktif")
+        log(f"  - Patience: {patience}")
+        log(f"  - Min Delta: {min_delta}")
+    else:
+        log("Early Stopping: Devre Dışı")
     log("=" * 50)
     log("")
 
 
-def print_confusion_matrix(conf_matrix: Tuple[int, int, int, int]) -> None:
+def print_confusion_matrix(
+    conf_matrix: Tuple[int, int, int, int],
+) -> None:
     """
     Confusion matrix'i ekrana tablo şeklinde yazdırır.
     Args:

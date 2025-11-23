@@ -1,11 +1,18 @@
-from typing import Tuple
+from datetime import datetime
+from typing import Dict, Tuple
+
 import numpy as np
 import argparse
+import logger
 
 from model import predict_probabilities, cross_entropy_loss
 from metrics import accuracy, precision, recall, f1_score, confusion_matrix
-from utils import log_test_results, print_confusion_matrix, log, setup_logger
-import argparse
+from utils import (
+    log_test_results,
+    print_confusion_matrix,
+    load_training_params,
+    log,
+)
 
 
 def load_test_data(
@@ -42,7 +49,7 @@ def evaluate_model(
     X: np.ndarray,
     y: np.ndarray,
     weights: np.ndarray,
-) -> dict[str, float | Tuple[int, int, int, int]]:
+) -> Tuple[Dict[str, float], Tuple[int, int, int, int]]:
     """
     Modeli verilen veri setinde değerlendirir.
     Args:
@@ -69,8 +76,7 @@ def evaluate_model(
         "precision": prec,
         "recall": rec,
         "f1_score": f1,
-        "confusion_matrix": conf_matrix,
-    }
+    }, conf_matrix
 
 
 if __name__ == "__main__":
@@ -86,22 +92,57 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Setup logger with mode from command line arguments
-    setup_logger(mode=args.log)
+    logger.setup_logger(mode=args.log)
+
+    log("\n" + "=" * 70)
+    log(
+        f"MODEL DEĞERLENDİRME BAŞLATILDI ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n".center(
+            70
+        )
+    )
+
+    # Load and display training parameters
+    training_params = load_training_params()
+    if training_params:
+        log("=" * 70)
+        log("EĞİTİM PARAMETRELERİ".center(70))
+        log("=" * 70)
+        log(f"  Öğrenme Oranı (Learning Rate): {training_params['learning_rate']}")
+        log(f"  Maksimum Epoch: {training_params['max_epochs']}")
+        log(f"  Gerçekleşen Epoch: {training_params['actual_epochs']}")
+        if training_params["early_stopping_enabled"]:
+            log("  Early Stopping: Aktif")
+            log(f"    - Patience: {training_params['patience']}")
+            log(f"    - Min Delta: {training_params['min_delta']}")
+            if training_params["early_stopped"]:
+                log(
+                    f"    - Durum: Tetiklendi (epoch {training_params['actual_epochs']}'de durduruldu)"
+                )
+            else:
+                log("    - Durum: Tetiklenmedi (tüm epochlar tamamlandı)")
+        else:
+            log("  Early Stopping: Devre Dışı")
+        log(f"  Eğitim Zamanı: {training_params['timestamp']}")
+        log("=" * 70)
+        log("")
 
     X_test, y_test = load_test_data("data/normalized")
     X_test = add_bias_term(X_test)
 
     weights = np.load("../results/model/model_weights_latest.npy")
 
-    metrics = evaluate_model(X_test, y_test, weights)
+    metrics, conf_matrix = evaluate_model(X_test, y_test, weights)
 
-    log("Test Seti Değerlendirme Sonuçları:")
-    log(f"Kayıp (Loss): {metrics['loss']:.4f}")
-    log(f"Doğruluk (Accuracy): {metrics['accuracy']:.4f}")
-    log(f"Kesinlik (Precision): {metrics['precision']:.4f}")
-    log(f"Duyarlılık (Recall): {metrics['recall']:.4f}")
-    log(f"F1 Skoru: {metrics['f1_score']:.4f}")
+    log("=" * 70)
+    log("TEST SETİ DEĞERLENDİRME SONUÇLARI".center(70))
+    log("=" * 70)
+    log(f"  Kayıp (Loss): {metrics['loss']:.4f}")
+    log(f"  Doğruluk (Accuracy): {metrics['accuracy']:.4f}")
+    log(f"  Kesinlik (Precision): {metrics['precision']:.4f}")
+    log(f"  Duyarlılık (Recall): {metrics['recall']:.4f}")
+    log(f"  F1 Skoru: {metrics['f1_score']:.4f}")
+    log("=" * 70)
 
-    print_confusion_matrix(metrics["confusion_matrix"])
+    print_confusion_matrix(conf_matrix)
 
     log_test_results(metrics)
